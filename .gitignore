@@ -1,0 +1,23 @@
+# IDE配置
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Java编译输出
+target/
+*.class
+*.jar
+*.war
+
+# 前端依赖和输出
+node_modules/
+dist/
+build/
+.npm
+.yarn
+
+# 系统垃圾文件
+Thumbs.db
+.DS_Store
