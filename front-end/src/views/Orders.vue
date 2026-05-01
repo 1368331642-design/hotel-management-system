@@ -4,6 +4,7 @@
     <LoadingSpinner v-if="loading" variant="user" />
     <div v-else>
       <div v-if="orders.length === 0" class="empty">
+        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2-12H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2z"/></svg>
         <p>暂无订单</p>
       </div>
       <div v-else class="orders-list">

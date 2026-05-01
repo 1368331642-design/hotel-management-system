@@ -30,7 +30,7 @@
         :style="{ animationDelay: `${Math.min(index * 70, 280)}ms` }"
       >
         <div class="order-info">
-          <h3 class="room-type-title">
+          <h3 class="room-type-title section-title">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>
             {{ order.room?.roomType?.name }}
           </h3>
@@ -44,12 +44,19 @@
             <span v-else-if="order.status === '已预订'" class="status-badge status-reserved-badge">{{ order.status }}</span>
             <span v-else-if="order.status === '已入住'" class="status-badge status-checkedin-badge">{{ order.status }}</span>
             <span v-else-if="order.status === '已支付'" class="status-badge status-paid-badge">{{ order.status }}</span>
+            <span v-else-if="order.status === '待支付'" class="status-badge status-pending-badge">待支付 <span v-if="pendingCountdowns[order.id]" class="pending-countdown">{{ pendingCountdowns[order.id] }}</span></span>
             <span v-else :class="'status-badge status-' + order.status">{{ order.status }}</span>
           </p>
         </div>
         <div class="order-actions">
           <div class="action-group">
-            <button v-if="order.status === '已预订' || order.status === '已支付'" @click="showCancelModal(order.id)" class="btn btn-cancel">取消预定</button>
+            <template v-if="order.status === '待支付'">
+              <button @click="goToPayment(order.id)" class="btn btn-pay">去支付</button>
+              <button @click="showCancelModal(order.id)" class="btn btn-cancel">取消订单</button>
+            </template>
+            <template v-else-if="order.status === '已预订' || order.status === '已支付'">
+              <button @click="showCancelModal(order.id)" class="btn btn-cancel">取消预定</button>
+            </template>
             <template v-if="canCheckOutEarly(order)">
               <button @click="showCheckOutModal(order.id)" class="btn btn-early-checkout">提前退房</button>
               <button @click="renewOrder(order.id)" class="btn btn-renew">续订</button>
@@ -71,30 +78,20 @@
     </div>
 
     <!-- 确认退房弹窗 -->
+    <transition name="modal">
     <div v-if="checkOutModalVisible" class="modal-overlay">
       <div class="modal-content">
         <h3>确认退房</h3>
-        <p>确定要退房吗？退房后订单将移至历史订单。</p>
         <div class="modal-actions">
           <button @click="closeCheckOutModal" class="btn btn-ghost">取消</button>
           <button @click="handleConfirmCheckOut" class="btn btn-confirm">确认退房</button>
         </div>
       </div>
     </div>
-
-    <!-- 退房成功提示 -->
-    <div v-if="checkOutSuccessVisible" class="modal-overlay">
-      <div class="modal-content">
-        <h3>✅ 退房成功</h3>
-        <p>订单已标记为已完成，您可以在历史订单中查看。</p>
-        <div class="modal-actions">
-          <button @click="checkOutSuccessVisible = false" class="btn btn-ghost">留在当前页</button>
-          <button @click="goToOrderHistory" class="btn btn-confirm">查看历史订单</button>
-        </div>
-      </div>
-    </div>
+    </transition>
 
     <!-- 确认取消预定弹窗 -->
+    <transition name="modal">
     <div v-if="cancelModalVisible" class="modal-overlay">
       <div class="modal-content">
         <h3>确认取消预定</h3>
@@ -105,6 +102,7 @@
         </div>
       </div>
     </div>
+    </transition>
 
     <!-- 分页组件 -->
     <div v-if="totalOrders > pageSize" class="pagination-wrapper">
@@ -153,12 +151,13 @@ export default {
       refreshInterval: null,
       error: null,
       checkOutModalVisible: false,
-      checkOutSuccessVisible: false,
       currentCheckOutOrderId: null,
       cancelModalVisible: false,
       currentCancelOrderId: null,
       graceCountdowns: {},
       graceInterval: null,
+      pendingCountdowns: {},
+      pendingInterval: null,
       abortController: null,
       isDestroyed: false,
       userInfo: {
@@ -250,6 +249,7 @@ export default {
     }
     this.startAutoRefresh()
     this.startGraceCountdowns()
+    this.startPendingCountdowns()
   },
   activated() {
     if (this.isDestroyed) return
@@ -258,6 +258,7 @@ export default {
       this.isAutoRefresh = false
       this.getOrders()
       this.startGraceCountdowns()
+      this.startPendingCountdowns()
     } else {
       this.loading = false
     }
@@ -270,6 +271,10 @@ export default {
     if (this.graceInterval) {
       clearInterval(this.graceInterval)
       this.graceInterval = null
+    }
+    if (this.pendingInterval) {
+      clearInterval(this.pendingInterval)
+      this.pendingInterval = null
     }
   },
   beforeUnmount() {
@@ -285,6 +290,10 @@ export default {
     if (this.graceInterval) {
       clearInterval(this.graceInterval)
       this.graceInterval = null
+    }
+    if (this.pendingInterval) {
+      clearInterval(this.pendingInterval)
+      this.pendingInterval = null
     }
   },
   methods: {
@@ -449,6 +458,9 @@ export default {
     renewOrder(orderId) {
       this.$router.push(`/booking?renewOrderId=${orderId}`)
     },
+    goToPayment(orderId) {
+      this.$router.push(`/booking?orderId=${orderId}&pay=true`)
+    },
     canCheckOutEarly(order) {
       const now = new Date()
       const checkOutTime = new Date(order.checkOutTime)
@@ -495,6 +507,33 @@ export default {
         this.graceCountdowns = updates
       }, 1000)
     },
+    startPendingCountdowns() {
+      this.pendingInterval = setInterval(() => {
+        if (this.isDestroyed) {
+          clearInterval(this.pendingInterval)
+          return
+        }
+        const updates = {}
+        let needRefresh = false
+        this.myOrders.forEach(order => {
+          if (order.status === '待支付' && order.createTime) {
+            const deadline = new Date(order.createTime).getTime() + 15 * 60 * 1000
+            const remaining = Math.max(0, deadline - Date.now())
+            if (remaining <= 0) {
+              needRefresh = true
+              return
+            }
+            const minutes = Math.floor(remaining / 60000)
+            const seconds = Math.floor((remaining % 60000) / 1000)
+            updates[order.id] = `${minutes}分${seconds}秒`
+          }
+        })
+        this.pendingCountdowns = updates
+        if (needRefresh) {
+          this.getOrders()
+        }
+      }, 1000)
+    },
     showCheckOutModal(orderId) {
       this.currentCheckOutOrderId = orderId
       this.checkOutModalVisible = true
@@ -510,17 +549,12 @@ export default {
         const response = await axios.put(`/api/user/orders/${this.currentCheckOutOrderId}/status?status=已完成`, {}, { withCredentials: true })
         if (response.data) {
           this.closeCheckOutModal()
-          this.checkOutSuccessVisible = true
           this.getOrders()
         }
       } catch (error) {
         console.error('退房失败:', error)
         alert('退房失败，请稍后重试')
       }
-    },
-    goToOrderHistory() {
-      this.checkOutSuccessVisible = false
-      this.$router.push('/profile?tab=orderHistory&subTab=history')
     },
     async earlyCheckOut(orderId) {
       // 保留原有方法，以便其他地方调用
@@ -638,24 +672,6 @@ export default {
   font-size: 0.95rem;
 }
 
-.login-prompt-btn {
-  padding: 0.5rem 1.5rem;
-  background: var(--primary-color);
-  color: var(--text-white);
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition);
-  box-shadow: var(--shadow-xs);
-  text-decoration: none;
-}
-
-.login-prompt-btn:hover {
-  box-shadow: var(--shadow-sm);
-}
-
 .login-prompt-register {
   color: var(--primary-color);
   font-size: 0.9rem;
@@ -734,6 +750,10 @@ export default {
 
 .order-status-reserved {
   border-left-color: var(--status-info);
+}
+
+.order-status-待支付 {
+  border-left-color: var(--status-danger);
 }
 
 .order-status-checked-in {
@@ -820,6 +840,17 @@ export default {
   color: var(--status-success);
 }
 
+.status-pending-badge {
+  color: var(--status-danger);
+  border: 1px solid #ffccc7;
+  animation: badgePulseDanger 2.5s ease-in-out infinite;
+}
+
+.pending-countdown {
+  font-weight: 600;
+  margin-left: 0.2rem;
+}
+
 .status-expiring-badge {
   background: var(--status-warning-bg);
   color: var(--status-warning);
@@ -883,6 +914,15 @@ export default {
 }
 
 .btn-renew:hover:not(:disabled) {
+  background-color: #cf9236;
+}
+
+.btn-pay {
+  background-color: var(--status-warning);
+  color: var(--text-white);
+}
+
+.btn-pay:hover:not(:disabled) {
   background-color: #cf9236;
 }
 

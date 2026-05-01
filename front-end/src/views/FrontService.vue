@@ -28,6 +28,7 @@
        
         <div v-else class="history-list">
         <div v-if="myServiceLogs.length === 0" class="empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
           <p>暂无呼叫/反馈记录</p>
         </div>
         <div v-for="log in myServiceLogs" :key="log.id" class="history-item">
@@ -58,6 +59,7 @@
     </div>
     
     <!-- 评价表单弹窗 -->
+    <transition name="modal">
     <div v-if="showReviewModal" class="modal-overlay">
       <div class="modal-content review-form-content">
         <h3>评价服务</h3>
@@ -104,7 +106,9 @@
         </div>
       </div>
     </div>
+    </transition>
     
+    <transition name="modal">
     <div v-if="showCallForm" class="modal-overlay">
       <div class="modal-content">
         <h3>呼叫前台</h3>
@@ -120,7 +124,9 @@
         </form>
       </div>
     </div>
+    </transition>
     
+    <transition name="modal">
     <div v-if="showFeedbackForm" class="modal-overlay">
       <div class="modal-content">
         <h3>问题反馈</h3>
@@ -144,6 +150,7 @@
         </form>
       </div>
     </div>
+    </transition>
   </div>
 </template>
 
@@ -409,6 +416,7 @@ export default {
   border: 2px solid var(--border-light);
   position: relative;
   overflow: hidden;
+  transition: all var(--transition);
 }
 
 .service-icon {
@@ -432,6 +440,12 @@ export default {
 .service-card:hover {
   border-color: var(--primary-color);
   box-shadow: var(--shadow-xs);
+}
+
+.service-card:active {
+  transform: scale(0.97);
+  box-shadow: none;
+  transition-duration: 0.1s;
 }
 
 .loading {

@@ -25,7 +25,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByUserId(Long userId);
     
     // 按用户ID分页查询活跃订单（不包括已取消和已完成的）
-    @Query("SELECT o FROM Order o WHERE o.user.id = :userId AND o.status IN ('已预订', '已入住', '已支付') ORDER BY o.checkInTime ASC")
+    @Query("SELECT o FROM Order o WHERE o.user.id = :userId AND o.status IN ('待支付', '已预订', '已入住', '已支付') ORDER BY o.checkInTime ASC")
     Page<Order> findActiveOrdersByUserId(@Param("userId") Long userId, Pageable pageable);
 
     @Query("SELECT o FROM Order o WHERE o.room = :room AND o.status IN ('已预订', '已入住') " +
@@ -62,6 +62,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     
     @Query("SELECT COUNT(o) FROM Order o WHERE o.status = '待支付'")
     Long countPendingOrders();
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.status = '已取消'")
+    Long countCancelledOrders();
     
     @Query("SELECT o FROM Order o WHERE o.status IN ('已预订', '已支付', '已入住', '已完成', '自动退房') ORDER BY o.createTime DESC")
     List<Order> findAllPaidOrders();
@@ -75,6 +78,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o ORDER BY o.createTime DESC")
     Page<Order> findAllOrderByCreateTimeDesc(Pageable pageable);
     
-    @Query("SELECT o FROM Order o WHERE o.status != '已支付' ORDER BY o.createTime DESC")
+    @Query("SELECT o FROM Order o WHERE o.status NOT IN ('已支付', '待支付') ORDER BY o.createTime DESC")
     Page<Order> findAllExceptPayedOrderByCreateTimeDesc(Pageable pageable);
 }

@@ -4,15 +4,16 @@
 
     <!-- 服务咨询 -->
     <div class="tab-content">
-      <h3>服务咨询</h3>
+      <h3 class="section-title">服务咨询</h3>
       
       <LoadingSpinner v-if="loadingServiceLogs" variant="frontdesk" size="small" />
       <ErrorRetry v-else-if="serviceLogsError" :message="serviceLogsError" @retry="getServiceLogs" />
 
       <div v-else-if="!loadingServiceLogs && !serviceLogsError">
         <div class="list">
-          <h4>咨询列表</h4>
+          <h4 class="section-title">咨询列表</h4>
           <div v-if="pendingServiceLogs.length === 0" class="empty">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
             <p>暂无待处理的咨询</p>
           </div>
           <div v-for="log in pendingServiceLogs" :key="log.id" class="item">
@@ -33,8 +34,9 @@
           </div>
         </div>
         <div class="list" style="margin-top: 2rem;">
-          <h4>服务记录</h4>
+          <h4 class="section-title">服务记录</h4>
           <div v-if="processedServiceLogs.length === 0" class="empty">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <p>暂无服务记录</p>
           </div>
           <div v-else>
@@ -87,6 +89,7 @@
     </div>
 
     <!-- 状态选择弹窗 -->
+    <transition name="modal">
     <div v-if="showStatusDialog" class="modal-overlay" @click="closeStatusDialog">
       <div class="modal-content" @click.stop>
         <h3>更新服务状态</h3>
@@ -103,6 +106,7 @@
         </div>
       </div>
     </div>
+    </transition>
   </div>
 </template>
 

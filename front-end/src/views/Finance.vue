@@ -12,29 +12,41 @@
 
     <!-- 顶部数据看板 -->
     <div class="stats-grid">
-      <div class="stat-card">
+      <div class="stat-card stat-revenue">
         <h5>总收入</h5>
         <p class="stat-number">¥{{ summary.totalRevenue?.toFixed(2) || '0.00' }}</p>
       </div>
-      <div class="stat-card">
-        <h5>今日收入</h5>
-        <p class="stat-number">¥{{ summary.todayRevenue?.toFixed(2) || '0.00' }}</p>
-      </div>
-      <div class="stat-card">
+      <div class="stat-card stat-revenue">
         <h5>本月收入</h5>
         <p class="stat-number">¥{{ summary.monthRevenue?.toFixed(2) || '0.00' }}</p>
       </div>
-      <div class="stat-card">
-        <h5>平均客单价</h5>
-        <p class="stat-number">¥{{ summary.avgOrderPrice?.toFixed(2) || '0.00' }}</p>
+      <div class="stat-card stat-revenue">
+        <h5>今日收入</h5>
+        <p class="stat-number">¥{{ summary.todayRevenue?.toFixed(2) || '0.00' }}</p>
       </div>
-      <div class="stat-card">
-        <h5>已支付订单数</h5>
+      <div class="stat-card stat-order-paid">
+        <h5>已支付订单</h5>
         <p class="stat-number">{{ summary.paidOrders || 0 }}</p>
       </div>
-      <div class="stat-card">
-        <h5>待支付订单数</h5>
+      <div class="stat-card stat-order-pending">
+        <h5>待支付订单</h5>
         <p class="stat-number">{{ summary.pendingOrders || 0 }}</p>
+      </div>
+      <div class="stat-card stat-order-cancelled">
+        <h5>已取消订单</h5>
+        <p class="stat-number">{{ summary.cancelledOrders || 0 }}</p>
+      </div>
+      <div class="stat-card stat-room-reserved">
+        <h5>已预定房间</h5>
+        <p class="stat-number">{{ summary.reservedRooms || 0 }}</p>
+      </div>
+      <div class="stat-card stat-room-checkedin">
+        <h5>已入住房间</h5>
+        <p class="stat-number">{{ summary.checkedInRooms || 0 }}</p>
+      </div>
+      <div class="stat-card stat-room-available">
+        <h5>空房</h5>
+        <p class="stat-number">{{ summary.availableRooms || 0 }}</p>
       </div>
     </div>
 
@@ -42,20 +54,20 @@
     <div class="charts-section">
       <!-- 月度收入趋势折线图 -->
       <div class="chart-card">
-        <h4>月度收入趋势</h4>
+        <h4 class="section-title">月度收入趋势</h4>
         <div ref="lineChartRef" style="width: 100%; height: 350px;"></div>
       </div>
 
       <!-- 各房型收入占比饼图 -->
       <div class="chart-card">
-        <h4>各房型收入占比</h4>
+        <h4 class="section-title">各房型收入占比</h4>
         <div ref="pieChartRef" style="width: 100%; height: 350px;"></div>
       </div>
     </div>
 
     <!-- 每日收入明细 -->
     <div class="chart-section">
-      <h4>本月每日收入明细</h4>
+      <h4 class="section-title">本月每日收入明细</h4>
       <div class="chart-container">
         <div ref="barChartRef" style="width: 100%; height: 350px;"></div>
       </div>
@@ -72,7 +84,7 @@
     <!-- 收入流水列表 -->
     <div class="orders-section">
       <div class="section-header">
-        <h4>收入流水列表</h4>
+        <h4 class="section-title">收入流水列表</h4>
         <!-- 筛选功能 -->
         <div class="filter-bar">
           <select v-model="selectedStatus" @change="onStatusChange" class="status-filter">
@@ -149,7 +161,7 @@
                   <div class="user-extra" v-if="order.user?.phone">{{ order.user.phone }}</div>
                 </td>
                 <td class="room-type">{{ order.room?.roomType?.name }}</td>
-                <td class="amount-cell" :class="{ highlight: isPaidStatus(order.status) }">
+                <td class="amount-cell" :class="'amount-' + getStatusBadgeClass(order.status)">
                   ¥{{ order.totalPrice?.toFixed(2) }}
                 </td>
                 <td class="order-time">{{ formatDateTime(order.createTime) }}</td>
@@ -212,7 +224,12 @@ export default {
         monthRevenue: 0,
         avgOrderPrice: 0,
         totalOrders: 0,
-        paidOrders: 0
+        paidOrders: 0,
+        pendingOrders: 0,
+        cancelledOrders: 0,
+        reservedRooms: 0,
+        checkedInRooms: 0,
+        availableRooms: 0
       },
       monthlyData: [],
       dailyData: [],
@@ -561,11 +578,11 @@ export default {
         case '自动退房':
           return 'status-completed'
         case '已预订':
-          return 'status-pending'
+          return 'status-warning'
         case '已入住':
-          return 'status-checked'
+          return 'status-info'
         case '已取消':
-          return 'status-cancelled'
+          return 'status-danger'
         default:
           return 'status-default'
       }
@@ -918,24 +935,95 @@ export default {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
 .stat-card {
-  padding: 2rem;
+  padding: 1.5rem;
   background-color: var(--bg-white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xs);
   text-align: center;
   transition: all var(--transition);
   border: 1px solid var(--border-light);
+  border-top: 3px solid transparent;
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: var(--border-light);
+}
+
+.stat-card::before {
+  display: none;
+}
+
+.stat-card.stat-revenue {
+  border-top-color: var(--primary-color);
+}
+
+.stat-card.stat-order-paid {
+  border-top-color: #52c41a;
+}
+
+.stat-card.stat-order-pending {
+  border-top-color: #faad14;
+}
+
+.stat-card.stat-order-cancelled {
+  border-top-color: #ff4d4f;
+}
+
+.stat-card.stat-room-reserved {
+  border-top-color: #9254de;
+}
+
+.stat-card.stat-room-checkedin {
+  border-top-color: #13c2c2;
+}
+
+.stat-card.stat-room-available {
+  border-top-color: #73d13d;
+}
+
+.stat-card.stat-revenue .stat-number {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-card.stat-order-paid .stat-number {
+  color: #52c41a;
+  -webkit-text-fill-color: #52c41a;
+}
+
+.stat-card.stat-order-pending .stat-number {
+  color: #faad14;
+  -webkit-text-fill-color: #faad14;
+}
+
+.stat-card.stat-order-cancelled .stat-number {
+  color: #ff4d4f;
+  -webkit-text-fill-color: #ff4d4f;
+}
+
+.stat-card.stat-room-reserved .stat-number {
+  color: #9254de;
+  -webkit-text-fill-color: #9254de;
+}
+
+.stat-card.stat-room-checkedin .stat-number {
+  color: #13c2c2;
+  -webkit-text-fill-color: #13c2c2;
+}
+
+.stat-card.stat-room-available .stat-number {
+  color: #73d13d;
+  -webkit-text-fill-color: #73d13d;
 }
 
 .stat-card h5 {
@@ -948,10 +1036,6 @@ export default {
 .stat-number {
   font-size: 2.2rem;
   font-weight: 700;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .charts-section {
@@ -1100,6 +1184,10 @@ export default {
   min-width: 800px;
 }
 
+.order-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
 .order-table thead {
   position: sticky;
   top: 0;
@@ -1145,27 +1233,27 @@ export default {
 }
 
 .order-table tr.row-paid {
-  background-color: rgba(103, 194, 58, 0.05);
+  background-color: rgba(144, 147, 153, 0.05);
 }
 
 .order-table tr.row-paid:hover {
-  background-color: rgba(103, 194, 58, 0.1);
+  background-color: rgba(144, 147, 153, 0.1);
 }
 
 .order-table tr.row-pending {
-  background-color: rgba(230, 162, 60, 0.05);
+  background-color: rgba(144, 147, 153, 0.05);
 }
 
 .order-table tr.row-pending:hover {
-  background-color: rgba(230, 162, 60, 0.1);
+  background-color: rgba(144, 147, 153, 0.1);
 }
 
 .order-table tr.row-checked {
-  background-color: rgba(91, 155, 213, 0.05);
+  background-color: rgba(144, 147, 153, 0.05);
 }
 
 .order-table tr.row-checked:hover {
-  background-color: rgba(91, 155, 213, 0.1);
+  background-color: rgba(144, 147, 153, 0.1);
 }
 
 .order-table tr.row-cancelled {
@@ -1210,13 +1298,31 @@ export default {
 .amount-cell {
   font-weight: 600;
   font-size: 1.05rem;
-  color: var(--primary-color);
   min-width: 100px;
 }
 
-.amount-cell.highlight {
+.amount-cell.amount-status-warning {
+  color: var(--status-warning);
+}
+
+.amount-cell.amount-status-info {
+  color: var(--status-info);
+}
+
+.amount-cell.amount-status-danger {
+  color: var(--status-danger);
+}
+
+.amount-cell.amount-status-completed {
   color: var(--status-success);
-  font-size: 1.1rem;
+}
+
+.amount-cell.amount-status-paid {
+  color: var(--status-info);
+}
+
+.amount-cell.amount-status-default {
+  color: var(--primary-color);
 }
 
 .order-time {
@@ -1252,13 +1358,6 @@ export default {
 .retry-btn:hover {
   box-shadow: 0 4px 12px rgba(91, 155, 213, 0.25);
   transform: translateY(-1px);
-}
-
-.empty-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 1rem;
-  stroke: var(--border-color);
 }
 
 .pagination-wrapper {
@@ -1358,7 +1457,7 @@ export default {
   }
   
   .stat-card {
-    padding: 1.5rem 1rem;
+    padding: 1rem;
   }
   
   .stat-number {

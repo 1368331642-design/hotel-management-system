@@ -30,6 +30,7 @@
         <div v-else class="form-section">
           <h3>选择房型</h3>
           <div v-if="roomTypes.length === 0" class="no-rooms">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
             <p>暂无可用房间</p>
           </div>
           <div v-else class="room-types">
@@ -57,22 +58,16 @@
           </div>
         </div>
 
-        <!-- 续订模式下选择续订时长 -->
+        <!-- 续订模式下选择续订日期 -->
         <div v-if="isRenew && selectedRoomType" class="form-section">
-          <h3>选择续订时长</h3>
-          <div class="duration-section-center">
-            <div class="form-group-center">
-              <label for="renewDuration">续订时长（天）</label>
-              <select id="renewDuration" v-model="renewDuration" @change="calculateCheckOutDate" required>
-                <option value="1">1天</option>
-                <option value="2">2天</option>
-                <option value="3">3天</option>
-                <option value="5">5天</option>
-                <option value="7">7天</option>
-                <option value="14">14天</option>
-                <option value="30">30天</option>
-              </select>
-            </div>
+          <h3>选择续订日期</h3>
+          <div class="form-group">
+            <label for="renewCheckOutDate">续订至</label>
+            <input type="date" id="renewCheckOutDate" v-model="form.checkOutDate" :min="renewMinCheckOutDate" :max="renewMaxCheckOutDate" @change="onRenewDateChange" required>
+            <div v-if="checkOutDateError" class="error-message">{{ checkOutDateError }}</div>
+          </div>
+          <div v-if="durationText" class="renew-duration-hint">
+            续订时长：{{ durationText }}
           </div>
         </div>
 
@@ -87,7 +82,7 @@
             </div>
             <div class="form-group">
               <label for="checkOutDate" style="visibility: hidden; margin-bottom: 0.5rem; display: block;">退</label>
-              <input type="date" id="checkOutDate" v-model="form.checkOutDate" :min="minCheckOutDate" @change="validateCheckOutDate" @input="validateCheckOutDate" required>
+              <input type="date" id="checkOutDate" v-model="form.checkOutDate" :min="minCheckOutDate" :max="maxCheckOutDate" @change="validateCheckOutDate" @input="validateCheckOutDate" required>
               <div v-if="checkOutDateError" class="error-message">{{ checkOutDateError }}</div>
             </div>
           </div>
@@ -141,45 +136,48 @@
           </div>
         </div>
 
-        <button v-if="canSubmit" type="submit" class="btn" :disabled="submitting">
+        <button v-if="canSubmit" type="submit" class="btn btn-submit-booking" :disabled="submitting">
           {{ submitting ? '提交中...' : (isRenew ? '续订' : `住${durationText}`) }}
         </button>
       </form>
-
-      <div v-if="showPaymentForm" class="modal-overlay">
-        <div class="modal-content">
-          <h3>{{ isRenew ? '续订支付' : '预订支付' }}</h3>
-          <div class="payment-info">
-            <p class="payment-amount">支付金额：¥{{ totalPrice }}</p>
-            <p class="payment-details">
-              {{ selectedRoomType.name }} - {{ formatDateTime(form.checkInDate) }} 至 {{ formatDateTime(form.checkOutDate) }}
-            </p>
-          </div>
-          <div class="payment-methods">
-            <h4>选择支付方式</h4>
-            <div class="payment-option">
-              <input type="radio" id="alipay" name="paymentMethod" value="alipay" checked>
-              <label for="alipay">支付宝</label>
-            </div>
-            <div class="payment-option">
-              <input type="radio" id="wechat" name="paymentMethod" value="wechat">
-              <label for="wechat">微信支付</label>
-            </div>
-            <div class="payment-option">
-              <input type="radio" id="card" name="paymentMethod" value="card">
-              <label for="card">银行卡</label>
-            </div>
-          </div>
-          <div class="modal-actions">
-            <button @click="cancelPayment" class="btn btn-ghost" :disabled="paymentProcessing">取消</button>
-            <button @click="processPayment" class="btn btn-confirm" :disabled="paymentProcessing">
-              {{ paymentProcessing ? '支付中...' : '确认支付' }}
-            </button>
-          </div>
-        </div>   <!-- closes modal-content -->
-      </div>     <!-- closes modal-overlay -->
       </div>     <!-- closes booking-content -->
     </template>  <!-- closes v-else template -->
+
+    <!-- 支付弹窗放在根层级，避免 transform 祖先影响 fixed 定位 -->
+    <transition name="modal">
+    <div v-if="showPaymentForm" class="modal-overlay">
+      <div class="modal-content">
+        <h3>{{ isRenew ? '续订支付' : '预订支付' }}</h3>
+        <div class="payment-info">
+          <p class="payment-amount">支付金额：¥{{ totalPrice }}</p>
+          <p class="payment-details">
+            {{ selectedRoomType.name }} - {{ formatDateTime(form.checkInDate) }} 至 {{ formatDateTime(form.checkOutDate) }}
+          </p>
+        </div>
+        <div class="payment-methods">
+          <h4>选择支付方式</h4>
+          <div class="payment-option">
+            <input type="radio" id="alipay" name="paymentMethod" value="alipay" checked>
+            <label for="alipay">支付宝</label>
+          </div>
+          <div class="payment-option">
+            <input type="radio" id="wechat" name="paymentMethod" value="wechat">
+            <label for="wechat">微信支付</label>
+          </div>
+          <div class="payment-option">
+            <input type="radio" id="card" name="paymentMethod" value="card">
+            <label for="card">银行卡</label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button @click="cancelPayment" class="btn btn-ghost" :disabled="paymentProcessing">取消</button>
+          <button @click="processPayment" class="btn btn-confirm" :disabled="paymentProcessing">
+            {{ paymentProcessing ? '支付中...' : '确认支付' }}
+          </button>
+        </div>
+      </div>
+    </div>
+    </transition>
   </div>         <!-- closes booking -->
 </template>
 
@@ -249,11 +247,37 @@ export default {
     minCheckOutDate() {
       if (!this.form.checkInDate) return this.minDate
       const checkIn = new Date(this.form.checkInDate)
-      // 退房日期至少比入住日期晚一天
       const minCheckOut = new Date(checkIn.getTime() + 24 * 60 * 60 * 1000)
       const year = minCheckOut.getFullYear()
       const month = String(minCheckOut.getMonth() + 1).padStart(2, '0')
       const day = String(minCheckOut.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    },
+    maxCheckOutDate() {
+      if (!this.form.checkInDate) return ''
+      const checkIn = new Date(this.form.checkInDate)
+      const maxCheckOut = new Date(checkIn.getTime() + 14 * 24 * 60 * 60 * 1000)
+      const year = maxCheckOut.getFullYear()
+      const month = String(maxCheckOut.getMonth() + 1).padStart(2, '0')
+      const day = String(maxCheckOut.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    },
+    renewMinCheckOutDate() {
+      if (!this.form.checkInDate) return ''
+      const checkIn = new Date(this.form.checkInDate)
+      const minCheckOut = new Date(checkIn.getTime() + 1 * 24 * 60 * 60 * 1000)
+      const year = minCheckOut.getFullYear()
+      const month = String(minCheckOut.getMonth() + 1).padStart(2, '0')
+      const day = String(minCheckOut.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    },
+    renewMaxCheckOutDate() {
+      if (!this.form.checkInDate) return ''
+      const checkIn = new Date(this.form.checkInDate)
+      const maxCheckOut = new Date(checkIn.getTime() + 14 * 24 * 60 * 60 * 1000)
+      const year = maxCheckOut.getFullYear()
+      const month = String(maxCheckOut.getMonth() + 1).padStart(2, '0')
+      const day = String(maxCheckOut.getDate()).padStart(2, '0')
       return `${year}-${month}-${day}`
     },
     canSubmit() {
@@ -398,6 +422,12 @@ export default {
         return
       }
       
+      const diffDays = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24))
+      if (diffDays > 14) {
+        this.checkOutDateError = '住房时长最多14天'
+        return
+      }
+      
       this.calculateDuration()
       this.calculatePrice()
       
@@ -512,7 +542,9 @@ export default {
             this.selectedRoomType = order.room.roomType
             this.selectedRoom = order.room
           }
-          this.calculateCheckOutDate()
+          this.form.checkOutDate = this.renewMinCheckOutDate
+          this.calculateDuration()
+          this.calculatePrice()
         }
       } catch (error) {
         if (axios.isCancel(error)) return
@@ -585,6 +617,27 @@ export default {
       if (!this.isRenew && this.selectedRoomType && !this.checkInDateError) {
         this.checkAvailability()
       }
+    },
+    onRenewDateChange() {
+      this.checkOutDateError = ''
+      if (!this.form.checkOutDate || !this.form.checkInDate) return
+
+      const checkOut = new Date(this.form.checkOutDate)
+      const checkIn = new Date(this.form.checkInDate)
+
+      if (checkOut <= checkIn) {
+        this.checkOutDateError = '续订日期必须在起始日期之后'
+        return
+      }
+
+      const diffDays = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24))
+      if (diffDays > 14) {
+        this.checkOutDateError = '续订时长最多14天'
+        return
+      }
+
+      this.calculateDuration()
+      this.calculatePrice()
     },
     formatDateForInput(dateString) {
       const date = new Date(dateString)
@@ -830,7 +883,7 @@ export default {
   color: var(--text-primary);
   font-size: 1.1rem;
   font-weight: 600;
-  padding-left: 0.5rem;
+  padding-left: 0.75rem;
   border-left: 3px solid var(--primary-color);
 }
 
@@ -851,6 +904,13 @@ export default {
   gap: 1rem;
 }
 
+.btn-submit-booking {
+  display: block;
+  width: 100%;
+  margin: 1.5rem auto 0;
+  text-align: center;
+}
+
 .room-type-card {
   display: flex;
   background-color: var(--bg-white);
@@ -858,11 +918,20 @@ export default {
   border-radius: var(--radius-md);
   padding: 1rem;
   cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.room-type-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.12);
 }
 
 .room-type-card.active {
   border-color: var(--primary-color);
   background-color: var(--status-info-bg);
+  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.15);
 }
 
 .room-type-image {
@@ -998,12 +1067,21 @@ export default {
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.room-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.12);
 }
 
 .room-item.active {
   border-color: var(--primary-color);
   background-color: var(--primary-color);
   color: var(--text-white);
+  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.2);
 }
 
 .price-section {
@@ -1094,6 +1172,17 @@ export default {
   color: var(--primary-color);
 }
 
+.renew-duration-hint {
+  text-align: center;
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: var(--status-info-bg);
+  border-radius: var(--radius-sm);
+}
+
 .duration-section-center {
   display: flex;
   justify-content: center;
@@ -1166,19 +1255,6 @@ export default {
 .login-prompt-text {
   color: var(--text-secondary);
   font-size: 0.95rem;
-}
-
-.login-prompt-btn {
-  padding: 0.5rem 1.5rem;
-  background: var(--primary-color);
-  color: var(--text-white);
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: var(--shadow-xs);
-  text-decoration: none;
 }
 
 .login-prompt-register {

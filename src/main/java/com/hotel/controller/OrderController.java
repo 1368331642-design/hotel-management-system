@@ -120,6 +120,16 @@ public class OrderController {
             throw new RuntimeException("该房间当前不可用，请选择其他房间");
         }
         
+        // 校验住房时长不超过14天
+        if (order.getCheckInTime() != null && order.getCheckOutTime() != null) {
+            long diffMillis = order.getCheckOutTime().getTime() - order.getCheckInTime().getTime();
+            long diffDays = diffMillis / (1000 * 60 * 60 * 24);
+            if (diffDays > 14) {
+                logger.warn("[订单创建] 住房时长超过14天限制，天数: {}", diffDays);
+                throw new RuntimeException("住房时长最多14天");
+            }
+        }
+        
         // 管理员已经将房间设置为可用，直接允许预订，不检查重叠订单
         // 管理员说了算！
         
@@ -226,6 +236,20 @@ public class OrderController {
     public Order renewOrder(@PathVariable Long id, @RequestBody Order renewData) {
         Order order = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("Order not found"));
         
+        // 校验续订时长不超过14天
+        if (renewData.getCheckOutTime() != null && order.getCheckOutTime() != null) {
+            long diffMillis = renewData.getCheckOutTime().getTime() - order.getCheckOutTime().getTime();
+            long diffDays = diffMillis / (1000 * 60 * 60 * 24);
+            if (diffDays > 14) {
+                logger.warn("[续订] 续订时长超过14天限制，天数: {}", diffDays);
+                throw new RuntimeException("续订时长最多14天");
+            }
+            if (diffDays <= 0) {
+                logger.warn("[续订] 续订时长无效，天数: {}", diffDays);
+                throw new RuntimeException("续订时长必须大于0天");
+            }
+        }
+        
         // 更新退房时间
         if (renewData.getCheckOutTime() != null) {
             order.setCheckOutTime(renewData.getCheckOutTime());
@@ -236,6 +260,7 @@ public class OrderController {
             order.setTotalPrice(renewData.getTotalPrice());
         }
         
+        logger.info("[续订] 订单 {} 续订成功，新退房时间: {}", order.getOrderNumber(), order.getCheckOutTime());
         return orderRepository.save(order);
     }
     

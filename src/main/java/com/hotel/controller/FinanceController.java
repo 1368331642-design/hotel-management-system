@@ -98,6 +98,22 @@ public class FinanceController {
         summary.put("pendingOrders", pendingOrders);
         logger.info("[财务统计] 待支付订单查询结果: {}", pendingOrders);
         
+        // 已取消订单数
+        Long cancelledOrders = orderRepository.countCancelledOrders();
+        summary.put("cancelledOrders", cancelledOrders);
+        
+        // 已预定房间数
+        Long reservedRooms = roomRepository.countReservedRooms();
+        summary.put("reservedRooms", reservedRooms);
+        
+        // 已入住房间数
+        Long checkedInRooms = roomRepository.countCheckedInRooms();
+        summary.put("checkedInRooms", checkedInRooms);
+        
+        // 空房数
+        Long availableRooms = roomRepository.countAvailableRooms();
+        summary.put("availableRooms", availableRooms);
+        
         // 平均客单价
         BigDecimal avgOrderPrice = BigDecimal.ZERO;
         if (paidOrders > 0) {

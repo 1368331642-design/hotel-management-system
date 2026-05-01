@@ -102,7 +102,7 @@
         <div class="user-order-section">
           <div v-if="currentOrders.length > 0" class="current-order">
             <div class="current-order-header">
-              <h3>我的房间</h3>
+              <h3 class="section-title">我的房间</h3>
               <span class="order-count-badge">{{ currentOrders.length }}间</span>
             </div>
             <div class="orders-list">
@@ -231,18 +231,20 @@
     </div>
 
     <!-- 确认退房弹窗 -->
+    <transition name="modal">
     <div v-if="checkOutModalVisible" class="modal-overlay">
       <div class="modal-content">
         <h3>确认退房</h3>
-        <p>确定要退房吗？</p>
         <div class="modal-actions">
           <button @click="closeCheckOutModal" class="btn btn-cancel">取消</button>
           <button @click="handleConfirmCheckOut" class="btn btn-confirm">确认</button>
         </div>
       </div>
     </div>
+    </transition>
 
     <!-- 确认取消订单弹窗 -->
+    <transition name="modal">
     <div v-if="cancelModalVisible" class="modal-overlay">
       <div class="modal-content">
         <h3>确认取消订单</h3>
@@ -253,6 +255,7 @@
         </div>
       </div>
     </div>
+    </transition>
   </div>
 </template>
 
@@ -529,6 +532,14 @@ export default {
         this.closeCancelModal()
       }
     },
+    async cancelOrder(orderId) {
+      try {
+        await axios.put(`/api/user/orders/${orderId}/cancel`, {}, { withCredentials: true })
+        this.getOrders()
+      } catch (error) {
+        console.error('自动取消订单失败:', error)
+      }
+    },
     showCheckOutModal(orderId) {
       this.currentCheckOutOrderId = orderId
       this.checkOutModalVisible = true
@@ -589,7 +600,8 @@ export default {
     getOrderStatusKey(order) {
       if (this.isOrderExpired(order)) return 'expired'
       if (this.isOrderExpiringSoon(order)) return 'expiring'
-      if (order.status === '待支付' || order.status === '已支付') return 'reserved'
+      if (order.status === '待支付') return 'pending'
+      if (order.status === '已支付') return 'reserved'
       return order.status
     },
     getOrderStatusText(order) {
@@ -821,9 +833,11 @@ export default {
   color: var(--status-success);
 }
 
-.tag-待支付 {
-  background: var(--status-warning-bg);
-  color: var(--status-warning);
+.tag-待支付,
+.tag-pending {
+  background: var(--status-danger-bg);
+  color: var(--status-danger);
+  animation: badgePulseDanger 2.5s ease-in-out infinite;
 }
 
 .tag-expiring {
@@ -1041,19 +1055,6 @@ export default {
   font-size: 0.95rem;
 }
 
-.login-prompt-btn {
-  padding: 0.5rem 1.5rem;
-  background: var(--primary-color);
-  color: var(--text-white);
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: var(--shadow-xs);
-  text-decoration: none;
-}
-
 .login-prompt-register {
   color: var(--primary-color);
   font-size: 0.9rem;
@@ -1228,6 +1229,12 @@ export default {
   border-color: var(--primary-light);
 }
 
+.feature:active {
+  transform: translateY(-2px) scale(0.97);
+  box-shadow: var(--shadow-sm);
+  transition-duration: 0.1s;
+}
+
 .feature:hover::before {
   transform: scaleX(1);
 }
@@ -1272,29 +1279,6 @@ export default {
   z-index: 1;
 }
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(4px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: var(--bg-white);
-  padding: 2.5rem;
-  border-radius: var(--radius-lg);
-  width: 90%;
-  max-width: 400px;
-  box-shadow: var(--shadow-md);
-}
-
 .modal-content h3 {
   margin-top: 0;
   margin-bottom: 1.5rem;
@@ -1316,7 +1300,25 @@ export default {
 }
 
 .btn-confirm {
-  background: var(--primary-color) !important;
-  color: var(--text-white) !important;
+  background: transparent !important;
+  color: var(--status-danger) !important;
+  border: 1px solid var(--status-danger) !important;
+}
+
+.btn-confirm:hover:not(:disabled) {
+  background: var(--status-danger-bg) !important;
+  box-shadow: none !important;
+}
+
+.btn-ghost {
+  background: transparent !important;
+  color: var(--status-warning) !important;
+  border: 1px solid var(--status-warning) !important;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--status-warning-bg) !important;
+  color: var(--status-warning) !important;
+  border-color: var(--status-warning) !important;
 }
 </style>

@@ -358,11 +358,10 @@ tbody td {
 }
 
 tbody tr {
-  transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
+  transition: background-color var(--transition-fast) ease;
 }
 tbody tr:hover {
-  background: color-mix(in srgb, var(--primary-color) 12%, var(--bg-hover));
-  transform: scale(1.005);
+  background-color: var(--bg-hover);
 }
 tbody tr:last-child td { border-bottom: none; }
 
@@ -421,12 +420,35 @@ select.form-input {
   font-size: 0.78rem;
   font-weight: 500;
 }
-.status-badge.status-success { background: var(--status-success-bg); color: var(--status-success); border: 1px solid #d9f7be; }
-.status-badge.status-pending { background: var(--status-info-bg); color: var(--status-info); border: 1px solid #d6e4ff; }
-.status-badge.status-warning { background: var(--status-warning-bg); color: var(--status-warning); border: 1px solid #fff1b8; }
+.status-badge.status-success { color: var(--status-success); border: 1px solid #d9f7be; }
+.status-badge.status-pending { color: var(--status-info); border: 1px solid #d6e4ff; }
+.status-badge.status-warning { color: var(--status-warning); border: 1px solid #fff1b8; animation: badgePulseWarning 2.5s ease-in-out infinite; }
 .status-badge.status-danger,
-.status-badge.status-expired { background: var(--status-danger-bg); color: var(--status-danger); border: 1px solid #ffccc7; }
-.status-badge.status-info { background: var(--status-info-bg); color: var(--status-info); border: 1px solid #d6e4ff; }
+.status-badge.status-expired { color: var(--status-danger); border: 1px solid #ffccc7; }
+.status-badge.status-info { color: var(--status-info); border: 1px solid #d6e4ff; animation: badgePulse 2.5s ease-in-out infinite; }
+.status-badge.status-paid { color: var(--status-info); border: 1px solid #d6e4ff; }
+.status-badge.status-completed { color: var(--status-success); border: 1px solid #d9f7be; }
+.status-badge.status-default { color: var(--text-secondary); border: 1px solid var(--border-light); }
+
+@keyframes badgePulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 4px rgba(91, 155, 213, 0.15); }
+}
+
+@keyframes badgePulseSuccess {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 4px rgba(82, 196, 26, 0.15); }
+}
+
+@keyframes badgePulseWarning {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 4px rgba(250, 173, 20, 0.15); }
+}
+
+@keyframes badgePulseDanger {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 4px rgba(255, 77, 79, 0.15); }
+}
 
 /* ----- 模态框 ----- */
 .modal-overlay {
@@ -438,7 +460,6 @@ select.form-input {
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  animation: fadeIn var(--transition) ease;
 }
 
 .modal-content {
@@ -448,7 +469,19 @@ select.form-input {
   width: 90%;
   max-width: 480px;
   box-shadow: var(--shadow-xl);
+}
+
+.modal-enter-active {
+  animation: fadeIn var(--transition) ease;
+}
+.modal-enter-active .modal-content {
   animation: modalSlideIn var(--transition-slow) cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.modal-leave-active {
+  animation: fadeIn var(--transition) ease reverse;
+}
+.modal-leave-active .modal-content {
+  animation: modalSlideOut var(--transition) cubic-bezier(0.55, 0.06, 0.68, 0.19);
 }
 
 .modal-content h3 {
@@ -469,6 +502,30 @@ select.form-input {
   display: flex;
   justify-content: center;
   gap: 0.75rem;
+}
+
+.modal-actions .btn-confirm {
+  background: transparent;
+  color: var(--status-danger);
+  border: 1px solid var(--status-danger);
+}
+
+.modal-actions .btn-confirm:hover:not(:disabled) {
+  background: var(--status-danger-bg);
+  color: var(--status-danger);
+  box-shadow: none;
+}
+
+.modal-actions .btn-ghost {
+  background: transparent;
+  color: var(--status-warning);
+  border: 1px solid var(--status-warning);
+}
+
+.modal-actions .btn-ghost:hover:not(:disabled) {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+  border-color: var(--status-warning);
 }
 
 /* ----- 分页 ----- */
@@ -515,17 +572,12 @@ select.form-input {
   padding: 3rem 2rem;
   color: var(--text-light);
 }
-.empty::before {
-  content: '';
-  display: block;
-  width: 56px;
-  height: 56px;
+.empty-icon {
+  width: 64px;
+  height: 64px;
   margin: 0 auto 1rem;
-  border-radius: var(--radius-round);
-  background: var(--primary-soft-gradient);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%235b9bd5' stroke-width='1.5'%3E%3Cpath d='M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
+  stroke: var(--border-color);
+  opacity: 0.6;
 }
 .empty p { font-size: 0.9rem; }
 
@@ -575,6 +627,11 @@ select.form-input {
   height: 22px;
   background: var(--primary-gradient);
   border-radius: 2px;
+}
+
+.section-title {
+  border-left: 3px solid var(--primary-color);
+  padding-left: 0.75rem;
 }
 
 /* ----- 标签页 ----- */
@@ -693,8 +750,13 @@ select.form-input {
 }
 
 @keyframes modalSlideIn {
-  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes modalSlideOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(10px) scale(0.95); }
 }
 
 @keyframes skeletonPulse {
@@ -806,6 +868,30 @@ select.form-input {
 @keyframes skeletonShimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+@keyframes loginBtnGlow {
+  0%, 100% { box-shadow: 0 4px 12px rgba(35, 133, 187, 0.25); }
+  50% { box-shadow: 0 4px 20px rgba(35, 133, 187, 0.5); }
+}
+
+.login-prompt-btn {
+  padding: 0.5rem 1.5rem;
+  background: var(--primary-gradient);
+  color: var(--text-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.25);
+  animation: loginBtnGlow 2.5s ease-in-out infinite;
+}
+
+.login-prompt-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(35, 133, 187, 0.4);
 }
 
 /* 呼吸灯 */
@@ -990,12 +1076,7 @@ select.form-input {
    微交互增强 — 纯追加，不覆盖已有规则
    ================================================================ */
 
-/* 表格行悬停高亮 */
-.table-container table tbody tr:hover td,
-table tbody tr:hover td {
-  background: var(--bg-hover);
-  transition: background var(--transition-fast);
-}
+/* 表格行悬停高亮 — 由 tbody tr:hover 统一处理，td 不再单独设背景 */
 
 /* 滚动条 hover 变色 */
 ::-webkit-scrollbar-thumb:hover {

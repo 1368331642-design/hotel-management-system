@@ -16,7 +16,7 @@
 
     <!-- 系统配置 -->
     <div v-if="activeTab === 'systemConfig'" class="tab-content tab-pane-enter" :key="activeTab + '-' + systemConfigSubTab">
-      <h3>系统配置</h3>
+      <h3 class="section-title">系统配置</h3>
       <div class="service-log-tabs">
         <button @click="systemConfigSubTab = 'hotelInfo'" :class="{ active: systemConfigSubTab === 'hotelInfo' }">酒店信息</button>
         <button @click="systemConfigSubTab = 'account'" :class="{ active: systemConfigSubTab === 'account' }">账户管理</button>
@@ -250,8 +250,8 @@
     </div>
 
     <!-- 数据管理 -->
-    <div v-if="activeTab === 'dataManage'" class="tab-content tab-pane-enter" :key="activeTab + '-' + orderStatusTab">
-      <h3>数据管理</h3>
+    <div v-if="activeTab === 'dataManage'" class="tab-content tab-pane-enter" :key="activeTab">
+      <h3 class="section-title">数据管理</h3>
 
       <div class="config-section">
         <h4>数据统计</h4>
@@ -304,6 +304,7 @@
         </div>
         <div class="list">
           <div v-if="filteredOrders.length === 0" class="empty">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2-12H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2z"/></svg>
             <p>暂无订单</p>
           </div>
           <div v-else :key="orderStatusTab">
@@ -373,6 +374,7 @@
           </div>
           <div class="panel-body">
             <div v-if="pendingServiceLogs.length === 0" class="empty">
+              <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
               <p>暂无待处理的服务</p>
             </div>
             <div v-else>
@@ -427,6 +429,7 @@
           </div>
           <div class="panel-body">
             <div v-if="processedServiceLogs.length === 0" class="empty">
+              <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               <p>暂无已处理的服务</p>
             </div>
             <div v-else>
@@ -474,6 +477,7 @@
           </div>
           <div class="panel-body">
             <div v-if="reviewedLogs.length === 0" class="empty">
+              <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
               <p>暂无用户评价</p>
             </div>
             <div v-else>
@@ -524,18 +528,22 @@
         <div v-else class="log-panel log-panel-full">
           <div class="panel-header">
             <span class="panel-title">房间状态</span>
-            <span class="panel-count">{{ roomStatusRooms.length }} 间客房</span>
-            <div class="toolbar-sort">
-              <span class="sort-label">排序</span>
-              <select v-model="roomStatusSortKey" class="sort-select">
-                <option value="status">按状态优先级</option>
-                <option value="roomNumber">按房间编号</option>
-                <option value="roomType">按客房类型</option>
-              </select>
+            <div class="panel-header-right">
+              <span class="panel-count">{{ roomStatusRooms.length }} 间客房</span>
+              <div class="page-size-selector">
+                <span class="sort-label">每页</span>
+                <select v-model.number="roomStatusPageSize" @change="onRoomStatusPageSizeChange" class="sort-select">
+                  <option :value="5">5条</option>
+                  <option :value="10">10条</option>
+                  <option :value="20">20条</option>
+                  <option :value="40">40条</option>
+                </select>
+              </div>
             </div>
           </div>
           <div class="panel-body">
             <div v-if="roomStatusRooms.length === 0" class="empty">
+              <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
               <p>暂无房间数据</p>
             </div>
             <div v-else class="room-table-wrapper">
@@ -543,19 +551,43 @@
                 <table>
                   <thead>
                     <tr>
-                      <th>房间编号</th>
-                      <th>客房类型</th>
-                      <th>容纳人数</th>
-                      <th>价格/晚</th>
-                      <th>当前状态</th>
-                      <th>入住客户</th>
-                      <th>预计退房</th>
+                      <th @click="roomStatusSortBy('roomNumber')" :class="{ sortable: true, sorted: roomStatusSortKey === 'roomNumber' }">
+                        房间编号
+                        <span class="sort-icon">{{ roomStatusSortKey === 'roomNumber' ? (roomStatusSortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+                      </th>
+                      <th @click="roomStatusSortBy('roomType')" :class="{ sortable: true, sorted: roomStatusSortKey === 'roomType' }">
+                        客房类型
+                        <span class="sort-icon">{{ roomStatusSortKey === 'roomType' ? (roomStatusSortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+                      </th>
+                      <th @click="roomStatusSortBy('capacity')" :class="{ sortable: true, sorted: roomStatusSortKey === 'capacity' }">
+                        容纳人数
+                        <span class="sort-icon">{{ roomStatusSortKey === 'capacity' ? (roomStatusSortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+                      </th>
+                      <th @click="roomStatusSortBy('price')" :class="{ sortable: true, sorted: roomStatusSortKey === 'price' }">
+                        价格/晚
+                        <span class="sort-icon">{{ roomStatusSortKey === 'price' ? (roomStatusSortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+                      </th>
+                      <th @click="roomStatusSortBy('status')" :class="{ sortable: true, sorted: roomStatusSortKey === 'status' }">
+                        当前状态
+                        <span class="sort-icon">{{ roomStatusSortKey === 'status' ? (roomStatusSortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+                      </th>
+                      <th @click="roomStatusSortBy('guestName')" :class="{ sortable: true, sorted: roomStatusSortKey === 'guestName' }">
+                        入住客户
+                        <span class="sort-icon">{{ roomStatusSortKey === 'guestName' ? (roomStatusSortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+                      </th>
+                      <th @click="roomStatusSortBy('checkOutTime')" :class="{ sortable: true, sorted: roomStatusSortKey === 'checkOutTime' }">
+                        预计退房
+                        <span class="sort-icon">{{ roomStatusSortKey === 'checkOutTime' ? (roomStatusSortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+                      </th>
                       <th>操作</th>
-                      <th>清洁状态</th>
+                      <th @click="roomStatusSortBy('cleaningStatus')" :class="{ sortable: true, sorted: roomStatusSortKey === 'cleaningStatus' }">
+                        清洁状态
+                        <span class="sort-icon">{{ roomStatusSortKey === 'cleaningStatus' ? (roomStatusSortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="room in sortedRoomStatusRooms" :key="room.id" :class="'row-status-' + getRoomStatusClass(room.status).replace('status-', '')">
+                    <tr v-for="room in roomStatusPaginatedRooms" :key="room.id" :class="'row-status-' + getRoomStatusClass(room.status).replace('status-', '')">
                       <td class="cell-number">{{ room.roomNumber }}</td>
                       <td>{{ room.roomType?.name || '-' }}</td>
                       <td>{{ room.roomType?.capacity || '-' }}人</td>
@@ -588,12 +620,37 @@
                 </table>
               </div>
             </div>
+            <!-- 房间状态分页 -->
+            <div class="room-status-pagination">
+              <div class="pagination-info">
+                共 {{ roomStatusRooms.length }} 条记录，第 {{ roomStatusCurrentPage }} / {{ roomStatusTotalPages }} 页
+              </div>
+              <div class="pagination">
+                <button @click="roomStatusGoToPage(1)" :disabled="roomStatusCurrentPage === 1" class="page-btn" title="第一页">«</button>
+                <button @click="roomStatusPrevPage" :disabled="roomStatusCurrentPage === 1" class="page-btn">上一页</button>
+                <div class="page-numbers">
+                  <template v-for="page in roomStatusVisiblePages" :key="page">
+                    <span v-if="page === -1" class="ellipsis">...</span>
+                    <button v-else @click="roomStatusGoToPage(page)" :class="['page-number', { active: roomStatusCurrentPage === page }]">{{ page }}</button>
+                  </template>
+                </div>
+                <button @click="roomStatusNextPage" :disabled="roomStatusCurrentPage === roomStatusTotalPages" class="page-btn">下一页</button>
+                <button @click="roomStatusGoToPage(roomStatusTotalPages)" :disabled="roomStatusCurrentPage === roomStatusTotalPages" class="page-btn" title="最后一页">»</button>
+              </div>
+              <div class="jump-page">
+                <span>跳至</span>
+                <input type="number" v-model.number="roomStatusJumpPage" @keyup.enter="roomStatusHandleJumpPage" min="1" :max="roomStatusTotalPages" />
+                <span>页</span>
+                <button @click="roomStatusHandleJumpPage" class="jump-btn">跳转</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 房间状态弹窗 -->
+    <transition name="modal">
     <div v-if="roomStatusShowDialog" class="modal-overlay" @click="closeRoomStatusDialog">
       <div class="modal-content" @click.stop>
         <h3>更新客房状态</h3>
@@ -613,6 +670,7 @@
         </div>
       </div>
     </div>
+    </transition>
 
     <!-- 图片查看器 -->
     <div v-if="imageViewerVisible" class="image-viewer-overlay" @click.self="closeImageViewer">
@@ -629,6 +687,7 @@
     </div>
 
     <!-- 确认删除弹窗 -->
+    <transition name="modal">
     <div v-if="deleteModalVisible" class="modal-overlay">
       <div class="modal-content">
         <h3>确认删除</h3>
@@ -639,7 +698,9 @@
         </div>
       </div>
     </div>
+    </transition>
     <!-- 房间删除确认弹窗 -->
+    <transition name="modal">
     <div v-if="roomDeleteModalVisible" class="modal-overlay">
       <div class="modal-content">
         <h3>确认删除</h3>
@@ -650,6 +711,7 @@
         </div>
       </div>
     </div>
+    </transition>
   </div>
 </template>
 
@@ -759,7 +821,11 @@ export default {
       roomStatusRooms: [],
       roomStatusLoading: false,
       roomStatusError: null,
-      roomStatusSortKey: 'status',
+      roomStatusSortKey: 'roomNumber',
+      roomStatusSortOrder: 'asc',
+      roomStatusCurrentPage: 1,
+      roomStatusPageSize: 10,
+      roomStatusJumpPage: 1,
       roomStatusShowDialog: false,
       roomStatusSelectedStatus: '空房',
       roomStatusCurrentRoomId: null,
@@ -891,12 +957,24 @@ export default {
       return pages
     },
     sortedRoomStatusRooms() {
+      if (!this.roomStatusRooms.length) return []
       const rooms = [...this.roomStatusRooms]
-      if (this.roomStatusSortKey === 'roomNumber') {
-        return rooms.sort((a, b) => (a.roomNumber || '').localeCompare(b.roomNumber || '', undefined, { numeric: true }))
+      const key = this.roomStatusSortKey
+      const order = this.roomStatusSortOrder
+      const compareString = (a, b) => {
+        const va = (a || '').toLowerCase()
+        const vb = (b || '').toLowerCase()
+        return order === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
       }
-      if (this.roomStatusSortKey === 'roomType') {
-        return rooms.sort((a, b) => (a.roomType?.name || '').localeCompare(b.roomType?.name || ''))
+      const compareNumber = (a, b) => {
+        const na = a || 0
+        const nb = b || 0
+        return order === 'asc' ? na - nb : nb - na
+      }
+      const compareDate = (a, b) => {
+        const da = a ? new Date(a).getTime() : 0
+        const db = b ? new Date(b).getTime() : 0
+        return order === 'asc' ? da - db : db - da
       }
       const statusPriority = {
         '已入住': 0,
@@ -907,11 +985,62 @@ export default {
         '维护中': 5
       }
       return rooms.sort((a, b) => {
-        const pa = statusPriority[a.status] ?? 99
-        const pb = statusPriority[b.status] ?? 99
-        if (pa !== pb) return pa - pb
-        return (a.roomNumber || '').localeCompare(b.roomNumber || '', undefined, { numeric: true })
+        switch (key) {
+          case 'roomNumber':
+            return compareString(a.roomNumber, b.roomNumber)
+          case 'roomType':
+            return compareString(a.roomType?.name, b.roomType?.name)
+          case 'capacity':
+            return compareNumber(a.roomType?.capacity, b.roomType?.capacity)
+          case 'price':
+            return compareNumber(a.roomType?.price, b.roomType?.price)
+          case 'status': {
+            const pa = statusPriority[a.status] ?? 99
+            const pb = statusPriority[b.status] ?? 99
+            if (pa !== pb) return order === 'asc' ? pa - pb : pb - pa
+            return compareString(a.roomNumber, b.roomNumber)
+          }
+          case 'guestName':
+            return compareString(a._guestName, b._guestName)
+          case 'checkOutTime':
+            return compareDate(a._checkOutTime, b._checkOutTime)
+          case 'cleaningStatus': {
+            const cs = (r) => {
+              if (r.status === '已完成' && r._cleaningStatus !== 'done') return 0
+              if (r.status === '已完成' && r._cleaningStatus === 'done') return 1
+              return 2
+            }
+            const ca = cs(a)
+            const cb = cs(b)
+            if (ca !== cb) return order === 'asc' ? ca - cb : cb - ca
+            return compareString(a.roomNumber, b.roomNumber)
+          }
+          default:
+            return 0
+        }
       })
+    },
+    roomStatusTotalPages() {
+      return Math.ceil(this.roomStatusRooms.length / this.roomStatusPageSize) || 1
+    },
+    roomStatusPaginatedRooms() {
+      const start = (this.roomStatusCurrentPage - 1) * this.roomStatusPageSize
+      return this.sortedRoomStatusRooms.slice(start, start + this.roomStatusPageSize)
+    },
+    roomStatusVisiblePages() {
+      const pages = []
+      let start = Math.max(1, this.roomStatusCurrentPage - 2)
+      let end = Math.min(this.roomStatusTotalPages, this.roomStatusCurrentPage + 2)
+      if (start > 1) {
+        pages.push(1)
+        if (start > 2) pages.push(-1)
+      }
+      for (let i = start; i <= end; i++) pages.push(i)
+      if (end < this.roomStatusTotalPages) {
+        if (end < this.roomStatusTotalPages - 1) pages.push(-1)
+        pages.push(this.roomStatusTotalPages)
+      }
+      return pages
     }
   },
   watch: {
@@ -927,7 +1056,11 @@ export default {
       this.orderCurrentPage = 1
       this.sliderValue = Math.min(this.sliderValue, this.totalDays - this.windowSize)
       this.$nextTick(() => {
-        this.updateOrderChart()
+        if (!this.orderChart) {
+          this.initOrderChart()
+        } else {
+          this.updateOrderChart()
+        }
       })
     },
     activeTab(newVal) {
@@ -1149,6 +1282,40 @@ export default {
       this.goToReviewPage(page)
     },
     // 房间状态方法
+    roomStatusSortBy(key) {
+      if (this.roomStatusSortKey === key) {
+        this.roomStatusSortOrder = this.roomStatusSortOrder === 'asc' ? 'desc' : 'asc'
+      } else {
+        this.roomStatusSortKey = key
+        this.roomStatusSortOrder = 'asc'
+      }
+      this.roomStatusCurrentPage = 1
+      this.roomStatusJumpPage = 1
+    },
+    roomStatusPrevPage() {
+      if (this.roomStatusCurrentPage > 1) this.roomStatusCurrentPage--
+    },
+    roomStatusNextPage() {
+      if (this.roomStatusCurrentPage < this.roomStatusTotalPages) this.roomStatusCurrentPage++
+    },
+    roomStatusGoToPage(page) {
+      if (page >= 1 && page <= this.roomStatusTotalPages) {
+        this.roomStatusCurrentPage = page
+        this.roomStatusJumpPage = page
+      }
+    },
+    onRoomStatusPageSizeChange() {
+      this.roomStatusCurrentPage = 1
+      this.roomStatusJumpPage = 1
+    },
+    roomStatusHandleJumpPage() {
+      const page = parseInt(this.roomStatusJumpPage)
+      if (isNaN(page) || page < 1 || page > this.roomStatusTotalPages) {
+        this.roomStatusJumpPage = this.roomStatusCurrentPage
+        return
+      }
+      this.roomStatusCurrentPage = page
+    },
     switchToRoomStatus() {
       this.serviceLogSubTab = 'roomStatus'
       this.getRoomStatusData()
@@ -1156,6 +1323,8 @@ export default {
     async getRoomStatusData() {
       this.roomStatusLoading = true
       this.roomStatusError = null
+      this.roomStatusCurrentPage = 1
+      this.roomStatusJumpPage = 1
       try {
         const [roomsRes, ordersRes] = await Promise.all([
           axios.get('/api/user/rooms', {
@@ -1911,6 +2080,12 @@ export default {
   border-left-color: var(--primary-color);
 }
 
+.admin-card:active {
+  transform: translateY(-2px) scale(0.97);
+  box-shadow: var(--shadow-sm);
+  transition-duration: 0.1s;
+}
+
 .admin-card:hover::before {
   transform: scaleX(1);
 }
@@ -1992,8 +2167,8 @@ export default {
   color: var(--text-primary);
   font-size: 1.15rem;
   font-weight: 600;
-  padding-left: 0.8rem;
-  border-left: 4px solid var(--primary-color);
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--primary-color);
 }
 
 .config-section h5 {
@@ -2541,11 +2716,26 @@ export default {
 }
 
 .btn-confirm {
-  background: var(--primary-gradient);
+  background: transparent;
+  color: var(--status-danger);
+  border: 1px solid var(--status-danger);
 }
 
-.btn-confirm:hover {
-  box-shadow: 0 4px 12px rgba(91, 155, 213, 0.25);
+.btn-confirm:hover:not(:disabled) {
+  background: var(--status-danger-bg);
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--status-warning);
+  border: 1px solid var(--status-warning);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+  border-color: var(--status-warning);
 }
 
 .review-display {
@@ -2731,6 +2921,70 @@ export default {
 
 .room-table-wrapper {
   margin-top: 0.5rem;
+}
+
+.room-table-wrapper tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.room-table-wrapper th {
+  background-color: var(--bg-light);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  padding: 0.75rem 0.8rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.room-table-wrapper th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.room-table-wrapper th.sortable:hover {
+  background-color: var(--status-info-bg);
+}
+
+.room-table-wrapper th.sortable.sorted {
+  background-color: var(--status-info-bg);
+  color: var(--primary-color);
+}
+
+.sort-icon {
+  margin-left: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.panel-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-size-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.room-status-pagination {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.ellipsis {
+  padding: 0 0.3rem;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  font-weight: bold;
 }
 
 .cell-number {

@@ -1,6 +1,6 @@
 <template>
   <div class="profile">
-    <h2>个人中心</h2>
+    <h2 class="page-title">个人中心</h2>
 
     <!-- 未登录提示横幅 -->
     <div v-if="!isLoggedIn" class="login-prompt-banner">
@@ -20,7 +20,7 @@
     <!-- 个人信息 -->
     <div v-if="activeTab === 'personalInfo'" class="tab-content tab-pane-enter" :key="activeTab">
       <div class="info-header">
-        <h3>个人信息</h3>
+        <h3 class="section-title">个人信息</h3>
         <div class="header-actions">
           <button v-if="!isEditing" @click="showChangePassword = true" class="btn btn-change-password">修改密码</button>
           <button v-if="!isEditing" @click="startEditing" class="btn btn-edit">编辑信息</button>
@@ -73,7 +73,7 @@
 
     <!-- 我的订单 -->
     <div v-if="activeTab === 'orderHistory'" class="tab-content tab-pane-enter" :key="'order-' + activeTab">
-      <h3>我的订单</h3>
+      <h3 class="section-title">我的订单</h3>
       <div class="order-tabs">
         <button @click="orderTab = 'pending'" :class="{ active: orderTab === 'pending' }">待支付</button>
         <button @click="orderTab = 'current'" :class="{ active: orderTab === 'current' }">已支付</button>
@@ -138,6 +138,7 @@
           </div>
         </template>
         <div v-if="subOrderTab !== 'history' && filteredOrders.length === 0" class="empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2-12H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2z"/></svg>
           <p v-if="orderTab === 'pending'">暂无待支付的订单</p>
           <p v-else-if="orderTab === 'current' && subOrderTab === 'uncheckin'">暂无未入住的订单</p>
           <p v-else-if="orderTab === 'current' && subOrderTab === 'checkedin'">暂无已入住的订单</p>
@@ -184,6 +185,7 @@
       <!-- 我的评价 -->
       <div v-if="orderTab === 'reviews'" class="reviews-panel tab-pane-enter" :key="'reviews-' + activeTab">
         <div v-if="myReviews.length === 0 && !loadingReviews" class="empty">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
           <p>暂无评价记录</p>
         </div>
         <div v-else-if="loadingReviews" class="loading">
@@ -216,6 +218,7 @@
     </div>
 
     <!-- 修改密码弹窗 -->
+    <transition name="modal">
     <div v-if="showChangePassword" class="modal-overlay" @click.self="showChangePassword = false">
       <div class="modal-content">
         <h3>修改密码</h3>
@@ -239,8 +242,10 @@
         </div>
       </div>
     </div>
+    </transition>
 
     <!-- 删除订单确认弹窗 -->
+    <transition name="modal">
     <div v-if="deleteModalVisible" class="modal-overlay" @click.self="closeDeleteModal">
       <div class="modal-content">
         <h3>确认删除</h3>
@@ -251,8 +256,10 @@
         </div>
       </div>
     </div>
+    </transition>
 
     <!-- 批量删除订单确认弹窗 -->
+    <transition name="modal">
     <div v-if="batchDeleteModalVisible" class="modal-overlay" @click.self="closeBatchDeleteModal">
       <div class="modal-content">
         <h3>确认批量删除</h3>
@@ -263,8 +270,10 @@
         </div>
       </div>
     </div>
+    </transition>
 
     <!-- 取消预定确认弹窗 -->
+    <transition name="modal">
     <div v-if="cancelModalVisible" class="modal-overlay" @click.self="closeCancelModal">
       <div class="modal-content">
         <h3>确认取消预定</h3>
@@ -275,7 +284,9 @@
         </div>
       </div>
     </div>
+    </transition>
     <!-- 订单评价弹窗 -->
+    <transition name="modal">
     <div v-if="orderReviewModalVisible" class="modal-overlay" @click.self="closeOrderReviewModal">
       <div class="modal-content review-modal-content">
         <h3>评价订单</h3>
@@ -326,6 +337,7 @@
         </div>
       </div>
     </div>
+    </transition>
     </template>
   </div>
 </template>
@@ -1619,12 +1631,26 @@ export default {
 }
 
 .btn-confirm {
-  background: var(--primary-gradient);
-  color: var(--text-white);
+  background: transparent;
+  color: var(--status-danger);
+  border: 1px solid var(--status-danger);
 }
 
-.btn-confirm:hover {
-  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.35);
+.btn-confirm:hover:not(:disabled) {
+  background: var(--status-danger-bg);
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--status-warning);
+  border: 1px solid var(--status-warning);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+  border-color: var(--status-warning);
 }
 
 .btn-delete-small {
@@ -1648,13 +1674,6 @@ export default {
   text-align: center;
   padding: 3rem 2rem;
   color: var(--text-light);
-}
-
-.empty-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 1rem;
-  stroke: var(--border-color);
 }
 
 .error-state {
@@ -2188,25 +2207,6 @@ export default {
 .login-prompt-text {
   color: var(--text-secondary);
   font-size: 0.95rem;
-}
-
-.login-prompt-btn {
-  padding: 0.5rem 1.5rem;
-  background: var(--primary-gradient);
-  color: var(--text-white);
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition);
-  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.25);
-  text-decoration: none;
-}
-
-.login-prompt-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(35, 133, 187, 0.35);
 }
 
 .login-prompt-register {

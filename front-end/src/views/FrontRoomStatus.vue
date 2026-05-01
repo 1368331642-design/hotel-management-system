@@ -6,6 +6,7 @@
     <ErrorRetry v-else-if="error" :message="error" @retry="getRooms" />
 
     <div v-else-if="rooms.length === 0" class="empty">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
       <p>暂无房间数据</p>
     </div>
 
@@ -14,12 +15,13 @@
         <div class="toolbar-info">
           共 <strong>{{ rooms.length }}</strong> 间客房
         </div>
-        <div class="toolbar-sort">
-          <span class="sort-label">排序</span>
-          <select v-model="sortKey" class="sort-select">
-            <option value="status">按状态优先级</option>
-            <option value="roomNumber">按房间编号</option>
-            <option value="roomType">按客房类型</option>
+        <div class="page-size-selector">
+          <span class="sort-label">每页</span>
+          <select v-model.number="pageSize" @change="onPageSizeChange" class="sort-select">
+            <option :value="5">5条</option>
+            <option :value="10">10条</option>
+            <option :value="20">20条</option>
+            <option :value="40">40条</option>
           </select>
         </div>
       </div>
@@ -28,19 +30,43 @@
         <table>
           <thead>
             <tr>
-              <th>房间编号</th>
-              <th>客房类型</th>
-              <th>容纳人数</th>
-              <th>价格/晚</th>
-              <th>当前状态</th>
-              <th>入住客户</th>
-              <th>住房日期</th>
+              <th @click="sortBy('roomNumber')" :class="{ sortable: true, sorted: sortKey === 'roomNumber' }">
+                房间编号
+                <span class="sort-icon">{{ sortKey === 'roomNumber' ? (sortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+              </th>
+              <th @click="sortBy('roomType')" :class="{ sortable: true, sorted: sortKey === 'roomType' }">
+                客房类型
+                <span class="sort-icon">{{ sortKey === 'roomType' ? (sortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+              </th>
+              <th @click="sortBy('capacity')" :class="{ sortable: true, sorted: sortKey === 'capacity' }">
+                容纳人数
+                <span class="sort-icon">{{ sortKey === 'capacity' ? (sortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+              </th>
+              <th @click="sortBy('price')" :class="{ sortable: true, sorted: sortKey === 'price' }">
+                价格/晚
+                <span class="sort-icon">{{ sortKey === 'price' ? (sortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+              </th>
+              <th @click="sortBy('status')" :class="{ sortable: true, sorted: sortKey === 'status' }">
+                当前状态
+                <span class="sort-icon">{{ sortKey === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+              </th>
+              <th @click="sortBy('guestName')" :class="{ sortable: true, sorted: sortKey === 'guestName' }">
+                入住客户
+                <span class="sort-icon">{{ sortKey === 'guestName' ? (sortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+              </th>
+              <th @click="sortBy('checkInTime')" :class="{ sortable: true, sorted: sortKey === 'checkInTime' }">
+                住房日期
+                <span class="sort-icon">{{ sortKey === 'checkInTime' ? (sortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+              </th>
               <th>操作</th>
-              <th>清洁状态</th>
+              <th @click="sortBy('cleaningStatus')" :class="{ sortable: true, sorted: sortKey === 'cleaningStatus' }">
+                清洁状态
+                <span class="sort-icon">{{ sortKey === 'cleaningStatus' ? (sortOrder === 'asc' ? '↑' : '↓') : '' }}</span>
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="room in sortedRooms" :key="room.id" :class="'row-status-' + getStatusClass(room.status).replace('status-', '')">
+            <tr v-for="room in paginatedRooms" :key="room.id" :class="'row-status-' + getStatusClass(room.status).replace('status-', '')">
               <td class="cell-number">{{ room.roomNumber }}</td>
               <td>{{ room.roomType?.name || '-' }}</td>
               <td>{{ room.roomType?.capacity || '-' }}人</td>
@@ -75,8 +101,33 @@
           </tbody>
         </table>
       </div>
+      <!-- 分页控件 -->
+      <div class="pagination-wrapper">
+        <div class="pagination-info">
+          共 {{ rooms.length }} 条记录，第 {{ currentPage }} / {{ totalPages }} 页
+        </div>
+        <div class="pagination">
+          <button @click="goToPage(1)" :disabled="currentPage === 1" class="page-btn" title="第一页">«</button>
+          <button @click="prevPage" :disabled="currentPage === 1" class="page-btn">上一页</button>
+          <div class="page-numbers">
+            <template v-for="page in visiblePages" :key="page">
+              <span v-if="page === -1" class="ellipsis">...</span>
+              <button v-else @click="goToPage(page)" :class="['page-number', { active: currentPage === page }]">{{ page }}</button>
+            </template>
+          </div>
+          <button @click="nextPage" :disabled="currentPage === totalPages" class="page-btn">下一页</button>
+          <button @click="goToPage(totalPages)" :disabled="currentPage === totalPages" class="page-btn" title="最后一页">»</button>
+        </div>
+        <div class="jump-page">
+          <span>跳至</span>
+          <input type="number" v-model.number="jumpPage" @keyup.enter="handleJumpPage" min="1" :max="totalPages" />
+          <span>页</span>
+          <button @click="handleJumpPage" class="jump-btn">跳转</button>
+        </div>
+      </div>
     </div>
 
+    <transition name="modal">
     <div v-if="showDialog" class="modal-overlay" @click="closeStatusDialog">
       <div class="modal-content" @click.stop>
         <h3>更新客房状态</h3>
@@ -96,6 +147,7 @@
         </div>
       </div>
     </div>
+    </transition>
   </div>
 </template>
 
@@ -127,7 +179,11 @@ export default {
       showDialog: false,
       selectedStatus: '空房',
       currentRoomId: null,
-      sortKey: 'status',
+      sortKey: 'roomNumber',
+      sortOrder: 'asc',
+      currentPage: 1,
+      pageSize: 10,
+      jumpPage: 1,
       cleaningTimers: {},
       abortController: null,
       isDestroyed: false
@@ -135,19 +191,82 @@ export default {
   },
   computed: {
     sortedRooms() {
+      if (!this.rooms.length) return []
       const rooms = [...this.rooms]
-      if (this.sortKey === 'roomNumber') {
-        return rooms.sort((a, b) => (a.roomNumber || '').localeCompare(b.roomNumber || '', undefined, { numeric: true }))
+      const key = this.sortKey
+      const order = this.sortOrder
+      const compareString = (a, b) => {
+        const va = (a || '').toLowerCase()
+        const vb = (b || '').toLowerCase()
+        return order === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
       }
-      if (this.sortKey === 'roomType') {
-        return rooms.sort((a, b) => (a.roomType?.name || '').localeCompare(b.roomType?.name || ''))
+      const compareNumber = (a, b) => {
+        const na = a || 0
+        const nb = b || 0
+        return order === 'asc' ? na - nb : nb - na
+      }
+      const compareDate = (a, b) => {
+        const da = a ? new Date(a).getTime() : 0
+        const db = b ? new Date(b).getTime() : 0
+        return order === 'asc' ? da - db : db - da
       }
       return rooms.sort((a, b) => {
-        const pa = STATUS_PRIORITY[a.status] ?? 99
-        const pb = STATUS_PRIORITY[b.status] ?? 99
-        if (pa !== pb) return pa - pb
-        return (a.roomNumber || '').localeCompare(b.roomNumber || '', undefined, { numeric: true })
+        switch (key) {
+          case 'roomNumber':
+            return compareString(a.roomNumber, b.roomNumber)
+          case 'roomType':
+            return compareString(a.roomType?.name, b.roomType?.name)
+          case 'capacity':
+            return compareNumber(a.roomType?.capacity, b.roomType?.capacity)
+          case 'price':
+            return compareNumber(a.roomType?.price, b.roomType?.price)
+          case 'status': {
+            const pa = STATUS_PRIORITY[a.status] ?? 99
+            const pb = STATUS_PRIORITY[b.status] ?? 99
+            if (pa !== pb) return order === 'asc' ? pa - pb : pb - pa
+            return compareString(a.roomNumber, b.roomNumber)
+          }
+          case 'guestName':
+            return compareString(a._guestName, b._guestName)
+          case 'checkInTime':
+            return compareDate(a._checkInTime, b._checkInTime)
+          case 'cleaningStatus': {
+            const cs = (r) => {
+              if (r.status === '已完成' && r._cleaningStatus !== 'done') return 0
+              if (r.status === '已完成' && r._cleaningStatus === 'done') return 1
+              return 2
+            }
+            const ca = cs(a)
+            const cb = cs(b)
+            if (ca !== cb) return order === 'asc' ? ca - cb : cb - ca
+            return compareString(a.roomNumber, b.roomNumber)
+          }
+          default:
+            return 0
+        }
       })
+    },
+    totalPages() {
+      return Math.ceil(this.rooms.length / this.pageSize) || 1
+    },
+    paginatedRooms() {
+      const start = (this.currentPage - 1) * this.pageSize
+      return this.sortedRooms.slice(start, start + this.pageSize)
+    },
+    visiblePages() {
+      const pages = []
+      let start = Math.max(1, this.currentPage - 2)
+      let end = Math.min(this.totalPages, this.currentPage + 2)
+      if (start > 1) {
+        pages.push(1)
+        if (start > 2) pages.push(-1)
+      }
+      for (let i = start; i <= end; i++) pages.push(i)
+      if (end < this.totalPages) {
+        if (end < this.totalPages - 1) pages.push(-1)
+        pages.push(this.totalPages)
+      }
+      return pages
     }
   },
   mounted() {
@@ -165,10 +284,46 @@ export default {
     document.removeEventListener('visibilitychange', this.handleVisibilityChange)
   },
   methods: {
+    sortBy(key) {
+      if (this.sortKey === key) {
+        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
+      } else {
+        this.sortKey = key
+        this.sortOrder = 'asc'
+      }
+      this.currentPage = 1
+      this.jumpPage = 1
+    },
+    prevPage() {
+      if (this.currentPage > 1) this.currentPage--
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages) this.currentPage++
+    },
+    goToPage(page) {
+      if (page >= 1 && page <= this.totalPages) {
+        this.currentPage = page
+        this.jumpPage = page
+      }
+    },
+    onPageSizeChange() {
+      this.currentPage = 1
+      this.jumpPage = 1
+    },
+    handleJumpPage() {
+      const page = parseInt(this.jumpPage)
+      if (isNaN(page) || page < 1 || page > this.totalPages) {
+        this.jumpPage = this.currentPage
+        return
+      }
+      this.currentPage = page
+    },
     async getRooms() {
       if (this.isDestroyed) return
       this.loading = true
       this.error = null
+      this.currentPage = 1
+      this.jumpPage = 1
       try {
         if (this.abortController) {
           this.abortController.abort()
@@ -335,30 +490,54 @@ export default {
   font-size: 0.9rem;
 }
 
-.toolbar-sort {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
+.table-container {
+  overflow-x: auto;
 }
 
-.sort-label {
-  color: var(--text-light);
-  font-size: 0.85rem;
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
 }
 
-.sort-select {
-  padding: 0.35rem 0.6rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background: var(--bg-white);
+.table-container th {
+  background-color: var(--bg-light);
+  font-weight: 600;
   color: var(--text-primary);
-  font-size: 0.85rem;
-  outline: none;
-  cursor: pointer;
+  white-space: nowrap;
+  padding: 0.75rem 0.8rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
 }
 
-.sort-select:focus {
-  border-color: var(--primary-color);
+.table-container th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.table-container th.sortable:hover {
+  background-color: var(--status-info-bg);
+}
+
+.table-container th.sortable.sorted {
+  background-color: var(--status-info-bg);
+  color: var(--primary-color);
+}
+
+.sort-icon {
+  margin-left: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.table-container tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.table-container td {
+  padding: 0.75rem 0.8rem;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
 }
 
 .cell-number {
@@ -415,6 +594,118 @@ td .btn-sm {
   color: #67c23a;
   background: #f0f9eb;
   border: 1px solid #c2e7b0;
+}
+
+/* 分页样式 */
+.pagination-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pagination-info {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.page-btn {
+  padding: 0.5rem 1rem;
+  background-color: var(--bg-white);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 0.9rem;
+}
+
+.page-btn:hover:not(:disabled) {
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  border-color: var(--primary-color);
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.page-number {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--bg-white);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 0.9rem;
+}
+
+.page-number:hover {
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  border-color: var(--primary-color);
+}
+
+.page-number.active {
+  background: var(--primary-gradient);
+  color: var(--text-white);
+  border-color: var(--primary-color);
+}
+
+.ellipsis {
+  padding: 0 0.3rem;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+}
+
+.page-size-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sort-label {
+  color: var(--text-light);
+  font-size: 0.85rem;
+}
+
+.sort-select {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-white);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.sort-select:focus {
+  border-color: var(--primary-color);
 }
 
 @media (max-width: 768px) {
