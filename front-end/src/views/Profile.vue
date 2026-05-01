@@ -2169,12 +2169,12 @@ export default {
 
 /* ======= 未登录提示横幅 ======= */
 .login-prompt-banner {
-  background: linear-gradient(135deg, #e8f4fa 0%, #f0f7fd 100%);
-  border: 1px solid #c5e2f2;
+  background: var(--status-info-bg);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 1rem 1.5rem;
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
 }
 
 .login-prompt-content {

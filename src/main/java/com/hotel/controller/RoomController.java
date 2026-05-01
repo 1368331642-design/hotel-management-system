@@ -76,8 +76,18 @@ public class RoomController {
 
     // 管理员添加房间
     @PostMapping("/admin/rooms")
-    public Room addRoom(@RequestBody Room room) {
-        return roomRepository.save(room);
+    public Map<String, Object> addRoom(@RequestBody Room room) {
+        Map<String, Object> result = new HashMap<>();
+        if (roomRepository.existsByRoomNumber(room.getRoomNumber())) {
+            result.put("success", false);
+            result.put("message", "房间号 " + room.getRoomNumber() + " 已存在");
+            return result;
+        }
+        roomRepository.save(room);
+        result.put("success", true);
+        result.put("message", "房间添加成功");
+        result.put("room", room);
+        return result;
     }
 
     // 管理员更新房间状态
@@ -86,6 +96,27 @@ public class RoomController {
         Room room = roomRepository.findById(id).orElseThrow(() -> new RuntimeException("Room not found"));
         room.setStatus(status);
         return roomRepository.save(room);
+    }
+
+    // 管理员删除房间
+    @DeleteMapping("/admin/rooms/{id}")
+    public Map<String, Object> deleteRoom(@PathVariable Long id) {
+        Map<String, Object> result = new HashMap<>();
+        Room room = roomRepository.findById(id).orElse(null);
+        if (room == null) {
+            result.put("success", false);
+            result.put("message", "房间不存在");
+            return result;
+        }
+        if (room.getOrders() != null && !room.getOrders().isEmpty()) {
+            result.put("success", false);
+            result.put("message", "该房间有关联订单，无法删除");
+            return result;
+        }
+        roomRepository.deleteById(id);
+        result.put("success", true);
+        result.put("message", "删除成功");
+        return result;
     }
 
     // 获取酒店信息

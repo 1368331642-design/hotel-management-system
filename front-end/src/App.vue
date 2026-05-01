@@ -9,6 +9,7 @@
           <router-link to="/booking" v-if="!isAdmin && !isFront">在线预订</router-link>
           <router-link to="/profile" v-if="isLoggedIn && !isAdmin && !isFront">个人中心</router-link>
           <router-link to="/front-desk" v-if="isFront && !isAdmin">前台服务</router-link>
+          <router-link to="/front-room-status" v-if="isFront && !isAdmin">房间状态</router-link>
           <router-link to="/" v-if="isAdmin">首页</router-link>
           <router-link to="/admin/finance" v-if="isAdmin">财务统计</router-link>
           <router-link to="/admin/logs" v-if="isAdmin">服务日志</router-link>
@@ -115,23 +116,22 @@ export default {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg-color, #f5f7fa);
+  background: var(--bg-color, #f0f4f8);
 }
 
 .header {
-  background: #fff;
-  border-bottom: 1px solid var(--border-light, #e8ecf1);
+  background: var(--bg-header);
   position: sticky;
   top: 0;
   z-index: 999;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 12px rgba(74,140,201,0.2);
 }
 
 .header-inner {
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 2rem;
-  height: 56px;
+  height: 54px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -139,10 +139,11 @@ export default {
 
 .header h1 {
   font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--primary-color, #5b9bd5);
+  font-weight: 700;
+  color: #fff;
   letter-spacing: 0.5px;
   white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 nav {
@@ -153,51 +154,51 @@ nav {
 }
 
 nav a {
-  color: var(--text-secondary, #6b7280);
+  color: rgba(255,255,255,0.85);
   text-decoration: none;
   padding: 0.4rem 0.75rem;
   border-radius: 6px;
   font-weight: 500;
   font-size: 0.875rem;
   white-space: nowrap;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 nav a:hover {
-  color: var(--primary-color, #5b9bd5);
-  background: rgba(91, 155, 213, 0.08);
+  color: #fff;
+  background: rgba(255,255,255,0.18);
 }
 
 nav a.router-link-active {
-  color: var(--primary-color, #5b9bd5);
-  background: rgba(91, 155, 213, 0.1);
+  color: #fff;
+  background: rgba(255,255,255,0.22);
   font-weight: 600;
 }
 
 .user-welcome {
-  color: var(--text-secondary, #6b7280);
+  color: rgba(255,255,255,0.85);
   font-size: 0.85rem;
   margin-left: 0.5rem;
   padding: 0.2rem 0.5rem;
 }
 
 .logout-btn {
-  background: transparent;
-  border: 1px solid var(--border-color, #dde1e6);
-  color: var(--text-secondary, #6b7280);
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.9);
   padding: 0.35rem 0.85rem;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
   font-size: 0.85rem;
   margin-left: 4px;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .logout-btn:hover {
-  color: #e74c3c;
-  border-color: #e74c3c;
-  background: rgba(231, 76, 60, 0.05);
+  background: rgba(255,77,79,0.85);
+  border-color: rgba(255,77,79,0.9);
+  color: #fff;
 }
 
 .main {
@@ -214,9 +215,8 @@ nav a.router-link-active {
 }
 
 .footer {
-  background: #fff;
-  border-top: 1px solid var(--border-light, #e8ecf1);
-  color: var(--text-light, #9ca3af);
+  background: linear-gradient(135deg, #3d7cc4 0%, #5b9bd5 100%);
+  color: rgba(255,255,255,0.7);
   padding: 0.75rem;
   text-align: center;
   margin-top: auto;

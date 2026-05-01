@@ -809,7 +809,7 @@ export default {
   background-color: var(--bg-white);
   padding: 2rem;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-light);
 }
 
@@ -951,7 +951,7 @@ export default {
 .form-group select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
+  box-shadow: var(--shadow-xs);
 }
 
 .error-message {
@@ -1133,7 +1133,7 @@ export default {
 .form-group-center select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
+  box-shadow: var(--shadow-xs);
 }
 
 @media (max-width: 768px) {
@@ -1147,12 +1147,12 @@ export default {
 
 /* ======= 未登录提示横幅 ======= */
 .login-prompt-banner {
-  background: linear-gradient(135deg, #e8f4fa 0%, #f0f7fd 100%);
-  border: 1px solid #c5e2f2;
+  background: var(--status-info-bg);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 1rem 1.5rem;
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
 }
 
 .login-prompt-content {
@@ -1170,14 +1170,14 @@ export default {
 
 .login-prompt-btn {
   padding: 0.5rem 1.5rem;
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   color: var(--text-white);
   border: none;
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.25);
+  box-shadow: var(--shadow-xs);
   text-decoration: none;
 }
 

@@ -65,6 +65,14 @@ const routes = [
     }
   },
   {
+    path: '/front-room-status',
+    name: 'FrontRoomStatus',
+    component: () => import('../views/FrontRoomStatus.vue'),
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
     path: '/room-status',
     name: 'RoomStatus',
     component: () => import('../views/RoomStatus.vue'),

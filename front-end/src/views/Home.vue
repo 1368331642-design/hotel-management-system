@@ -26,7 +26,7 @@
         </div>
         <div class="feature" @click="goToRoomStatus" style="cursor: pointer;">
           <div class="feature-icon">🏨</div>
-          <h3>实时房态</h3>
+          <h3>房间查询</h3>
           <p>实时查看房间状态，确保您能预订到可用的房间</p>
         </div>
         <div class="feature" @click="goToFrontService" style="cursor: pointer;">
@@ -48,22 +48,13 @@
       <div v-if="isAdmin" class="admin-home">
         <div class="hero">
           <h2>管理员中心</h2>
-          <p>系统配置管理和数据统计</p>
-          <div class="buttons">
-            <button @click="goToAdmin" class="btn">系统配置</button>
-            <button @click="goToAdminData" class="btn btn-outline">数据管理</button>
-          </div>
+          <p>财务统计和服务日志管理</p>
         </div>
         <div class="features">
           <div class="feature" @click="goToAdmin" style="cursor: pointer;">
-            <div class="feature-icon">⚙️</div>
-            <h3>系统配置</h3>
-            <p>酒店基础信息、客房资源管理</p>
-          </div>
-          <div class="feature" @click="goToAdminData" style="cursor: pointer;">
-            <div class="feature-icon">📊</div>
-            <h3>数据管理</h3>
-            <p>预订数据统计、订单管理</p>
+            <div class="feature-icon">🛠️</div>
+            <h3>管理中心</h3>
+            <p>系统配置和数据管理</p>
           </div>
           <div class="feature" @click="goToFinance" style="cursor: pointer;">
             <div class="feature-icon">💰</div>
@@ -202,7 +193,7 @@
           </div>
           <div class="feature" @click="goToRoomStatus" style="cursor: pointer;">
             <div class="feature-icon">🏨</div>
-            <h3>实时房态</h3>
+            <h3>房间查询</h3>
             <p>实时查看房间状态，确保您能预订到可用的房间</p>
           </div>
           <div class="feature" @click="goToFrontService" style="cursor: pointer;">
@@ -282,8 +273,9 @@ export default {
       currentCheckOutOrderId: null,
       cancelModalVisible: false,
       currentCancelOrderId: null,
-      abortController: null,
       isDestroyed: false,
+      ordersLoading: false,
+      _hasBeenHidden: false,
       userInfo: {
         id: null,
         username: '',
@@ -324,10 +316,6 @@ export default {
   },
   beforeUnmount() {
     this.isDestroyed = true
-    if (this.abortController) {
-      this.abortController.abort()
-      this.abortController = null
-    }
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval)
       this.refreshInterval = null
@@ -363,29 +351,23 @@ export default {
       }
     },
     async getOrders() {
-      if (this.isDestroyed) return
+      if (this.isDestroyed || this.ordersLoading) return
+      this.ordersLoading = true
       try {
         if (this.userInfo && this.userInfo.id) {
-          if (this.abortController) {
-            this.abortController.abort()
-          }
-          this.abortController = new AbortController()
-          const response = await fetch(`/api/user/orders/user/${this.userInfo.id}/active?page=0&size=20`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            signal: this.abortController.signal
+          const response = await axios.get(`/api/user/orders/user/${this.userInfo.id}/active`, {
+            params: { page: 0, size: 20 },
+            withCredentials: true
           })
-          const data = await response.json()
           if (!this.isDestroyed) {
-            this.orders = data.content || data
+            this.orders = response.data.content || response.data
           }
         }
       } catch (error) {
-        if (error.name === 'AbortError') return
+        if (axios.isCancel(error)) return
         console.error('获取订单失败:', error)
+      } finally {
+        this.ordersLoading = false
       }
     },
     formatDate(dateString) {
@@ -455,7 +437,7 @@ export default {
     },
     goToRoomStatus() {
       if (this.checkLogin()) {
-        this.$router.push('/room-status')
+        this.$router.push('/rooms')
       }
     },
     goToFrontService() {
@@ -512,7 +494,11 @@ export default {
       if (this.isDestroyed) return
       if (document.visibilityState === 'visible') {
         this.countdownNow = Date.now()
-        this.getOrders()
+        if (this._hasBeenHidden) {
+          this.getOrders()
+        }
+      } else {
+        this._hasBeenHidden = true
       }
     },
     showCancelModal(orderId) {

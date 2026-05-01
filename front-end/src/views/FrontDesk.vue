@@ -1,13 +1,9 @@
 <template>
   <div class="front-desk">
     <h2 class="page-title">前台服务</h2>
-    <div class="tab-buttons">
-      <button @click="activeTab = 'serviceLogs'" :class="{ active: activeTab === 'serviceLogs' }">服务咨询</button>
-      <button @click="activeTab = 'roomStatus'" :class="{ active: activeTab === 'roomStatus' }">客房状态</button>
-    </div>
 
     <!-- 服务咨询 -->
-    <div v-if="activeTab === 'serviceLogs'" class="tab-content">
+    <div class="tab-content">
       <h3>服务咨询</h3>
       
       <LoadingSpinner v-if="loadingServiceLogs" variant="frontdesk" size="small" />
@@ -90,27 +86,6 @@
       </div>
     </div>
 
-    <!-- 客房状态 -->
-    <div v-if="activeTab === 'roomStatus'" class="tab-content">
-      <h3>客房状态</h3>
-      
-      <LoadingSpinner v-if="loadingRooms" variant="frontdesk" size="small" />
-      <ErrorRetry v-else-if="roomsError" :message="roomsError" @retry="getRooms" />
-
-      <div v-else-if="!loadingRooms && !roomsError" class="list">
-        <h4>房间列表</h4>
-        <div v-if="rooms.length === 0" class="empty">
-          <p>暂无房间数据</p>
-        </div>
-        <div v-for="room in rooms" :key="room.id" class="item">
-          <p>房间号: {{ room.roomNumber }}</p>
-          <p>房型: {{ room.roomType.name }}</p>
-          <p>状态: {{ room.status }}</p>
-          <button @click="openRoomStatusDialog(room.id, room.status)" class="btn">更新状态</button>
-        </div>
-      </div>
-    </div>
-
     <!-- 状态选择弹窗 -->
     <div v-if="showStatusDialog" class="modal-overlay" @click="closeStatusDialog">
       <div class="modal-content" @click.stop>
@@ -125,25 +100,6 @@
         <div class="modal-actions">
           <button @click="confirmUpdateStatus" class="btn btn-confirm">确认</button>
           <button @click="closeStatusDialog" class="btn btn-ghost">取消</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showRoomStatusDialog" class="modal-overlay" @click="closeRoomStatusDialog">
-      <div class="modal-content" @click.stop>
-        <h3>更新客房状态</h3>
-        <div class="form-group">
-          <label>选择状态:</label>
-          <select v-model="selectedRoomStatus" class="form-input">
-            <option value="空房">空房</option>
-            <option value="已预订">已预订</option>
-            <option value="已入住">已入住</option>
-            <option value="维护中">维护中</option>
-          </select>
-        </div>
-        <div class="modal-actions">
-          <button @click="confirmUpdateRoomStatus" class="btn btn-confirm">确认</button>
-          <button @click="closeRoomStatusDialog" class="btn btn-ghost">取消</button>
         </div>
       </div>
     </div>
@@ -163,20 +119,13 @@ export default {
   },
   data() {
     return {
-      activeTab: 'serviceLogs',
       serviceLogs: [],
-      rooms: [],
       showStatusDialog: false,
       selectedStatus: '待处理',
       currentLogId: null,
-      showRoomStatusDialog: false,
-      selectedRoomStatus: '空房',
-      currentRoomId: null,
       refreshInterval: null,
       loadingServiceLogs: false,
-      loadingRooms: false,
       serviceLogsError: null,
-      roomsError: null,
       currentPage: 1,
       pageSize: 5,
       jumpPage: 1
@@ -217,10 +166,9 @@ export default {
   },
   mounted() {
     this.getServiceLogs()
-    this.getRooms()
     this.startAutoRefresh()
   },
-  beforeDestroy() {
+  beforeUnmount() {
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval)
     }
@@ -230,7 +178,6 @@ export default {
       // 优化：只在页面可见时刷新，减少不必要的请求
       const checkAndRefresh = () => {
         if (document.visibilityState === 'visible') {
-          this.getRooms()
           this.getServiceLogs()
         }
       }
@@ -289,52 +236,6 @@ export default {
         } catch (error) {
           console.error('更新服务日志状态失败:', error)
           alert('更新服务日志状态失败，请稍后重试')
-        }
-      }
-    },
-    async getRooms() {
-      this.loadingRooms = true
-      this.roomsError = null
-      try {
-        const response = await axios.get('/api/user/rooms', {
-          params: {
-            page: 0,
-            size: 100
-          },
-          withCredentials: true
-        })
-        this.rooms = response.data.content || response.data
-      } catch (error) {
-        console.error('获取房间失败:', error)
-        this.roomsError = '获取房间数据失败，请检查网络后重试'
-      } finally {
-        this.loadingRooms = false
-      }
-    },
-    openRoomStatusDialog(roomId, currentStatus) {
-      this.currentRoomId = roomId
-      this.selectedRoomStatus = currentStatus || '空房'
-      this.showRoomStatusDialog = true
-    },
-
-    closeRoomStatusDialog() {
-      this.showRoomStatusDialog = false
-      this.currentRoomId = null
-      this.selectedRoomStatus = '空房'
-    },
-
-    async confirmUpdateRoomStatus() {
-      if (this.currentRoomId) {
-        try {
-          const response = await axios.put(`/api/user/admin/rooms/${this.currentRoomId}/status?status=${encodeURIComponent(this.selectedRoomStatus)}`, {}, { withCredentials: true })
-          if (response.data) {
-            alert('房间状态更新成功')
-            this.getRooms()
-            this.closeRoomStatusDialog()
-          }
-        } catch (error) {
-          console.error('更新房间状态失败:', error)
-          alert('更新房间状态失败，请稍后重试')
         }
       }
     },

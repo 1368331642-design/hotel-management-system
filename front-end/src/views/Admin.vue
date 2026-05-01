@@ -17,8 +17,14 @@
     <!-- 系统配置 -->
     <div v-if="activeTab === 'systemConfig'" class="tab-content">
       <h3>系统配置</h3>
-      
-      <div class="config-section">
+      <div class="service-log-tabs">
+        <button @click="systemConfigSubTab = 'hotelInfo'" :class="{ active: systemConfigSubTab === 'hotelInfo' }">酒店信息</button>
+        <button @click="systemConfigSubTab = 'account'" :class="{ active: systemConfigSubTab === 'account' }">账户管理</button>
+        <button @click="systemConfigSubTab = 'roomType'" :class="{ active: systemConfigSubTab === 'roomType' }">房型管理</button>
+        <button @click="systemConfigSubTab = 'room'" :class="{ active: systemConfigSubTab === 'room' }">房间管理</button>
+      </div>
+
+      <div v-if="systemConfigSubTab === 'hotelInfo'" class="config-section">
         <h4>酒店信息</h4>
         <div class="add-form">
           <form @submit.prevent="saveHotelInfo">
@@ -51,63 +57,7 @@
         </div>
       </div>
 
-      <div class="config-section">
-        <h4>房型管理</h4>
-        <div class="add-form">
-          <form @submit.prevent="addRoomType">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="name">房型名称</label>
-                <input type="text" id="name" v-model="roomTypeForm.name" required>
-              </div>
-              <div class="form-group">
-                <label for="price">价格</label>
-                <input type="number" id="price" v-model="roomTypeForm.price" min="1" step="0.01" required>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="capacity">容量</label>
-                <input type="number" id="capacity" v-model="roomTypeForm.capacity" min="1" required>
-              </div>
-              <div class="form-group">
-                <label for="facilities">设施</label>
-                <input type="text" id="facilities" v-model="roomTypeForm.facilities" required>
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="description">描述</label>
-              <textarea id="description" v-model="roomTypeForm.description" rows="2" required></textarea>
-            </div>
-            <div class="form-group">
-              <label>房型图片</label>
-              <input type="file" accept="image/*" @change="handleImageUpload" class="file-input">
-              <div v-if="roomTypeForm.image" class="image-preview">
-                <img :src="roomTypeForm.image" alt="预览" class="preview-img">
-                <button type="button" @click="removeImage" class="btn btn-small btn-delete" style="margin-top: 10px;">删除图片</button>
-              </div>
-            </div>
-            <button type="submit" class="btn">添加房型</button>
-          </form>
-        </div>
-        <div class="list">
-          <h5>已有房型</h5>
-          <div v-for="roomType in roomTypes" :key="roomType.id" class="item room-type-item">
-            <div v-if="roomType.image" class="room-type-image">
-              <img :src="roomType.image" :alt="roomType.name" class="room-type-img">
-            </div>
-            <div class="room-type-info">
-              <p>名称: {{ roomType.name }}</p>
-              <p>价格: ¥{{ roomType.price }}/晚</p>
-              <p>容量: {{ roomType.capacity }}人</p>
-              <p v-if="roomType.facilities">设施: {{ roomType.facilities }}</p>
-            </div>
-            <button @click="deleteRoomType(roomType.id)" class="btn btn-small btn-delete">删除</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="config-section">
+      <div v-if="systemConfigSubTab === 'account'" class="config-section">
         <h4>账户管理</h4>
         <div class="add-form">
           <form @submit.prevent="addUser">
@@ -193,7 +143,63 @@
         </div>
       </div>
 
-      <div class="config-section">
+      <div v-if="systemConfigSubTab === 'roomType'" class="config-section">
+        <h4>房型管理</h4>
+        <div class="add-form">
+          <form @submit.prevent="addRoomType">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="name">房型名称</label>
+                <input type="text" id="name" v-model="roomTypeForm.name" required>
+              </div>
+              <div class="form-group">
+                <label for="price">价格</label>
+                <input type="number" id="price" v-model="roomTypeForm.price" min="1" step="0.01" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="capacity">容量</label>
+                <input type="number" id="capacity" v-model="roomTypeForm.capacity" min="1" required>
+              </div>
+              <div class="form-group">
+                <label for="facilities">设施</label>
+                <input type="text" id="facilities" v-model="roomTypeForm.facilities" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="description">描述</label>
+              <textarea id="description" v-model="roomTypeForm.description" rows="2" required></textarea>
+            </div>
+            <div class="form-group">
+              <label>房型图片</label>
+              <input type="file" accept="image/*" @change="handleImageUpload" class="file-input">
+              <div v-if="roomTypeForm.image" class="image-preview">
+                <img :src="roomTypeForm.image" alt="预览" class="preview-img">
+                <button type="button" @click="removeImage" class="btn btn-small btn-delete" style="margin-top: 10px;">删除图片</button>
+              </div>
+            </div>
+            <button type="submit" class="btn">添加房型</button>
+          </form>
+        </div>
+        <div class="list">
+          <h5>已有房型</h5>
+          <div v-for="roomType in roomTypes" :key="roomType.id" class="item room-type-item">
+            <div v-if="roomType.image" class="room-type-image">
+              <img :src="roomType.image" :alt="roomType.name" class="room-type-img">
+            </div>
+            <div class="room-type-info">
+              <p>名称: {{ roomType.name }}</p>
+              <p>价格: ¥{{ roomType.price }}/晚</p>
+              <p>容量: {{ roomType.capacity }}人</p>
+              <p v-if="roomType.facilities">设施: {{ roomType.facilities }}</p>
+            </div>
+            <button @click="deleteRoomType(roomType.id)" class="btn btn-small btn-delete">删除</button>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="systemConfigSubTab === 'room'" class="config-section">
         <h4>房间管理</h4>
         <div class="add-form">
           <form @submit.prevent="addRoom">
@@ -236,6 +242,7 @@
                 <option value="维护中">维护中</option>
               </select>
               <button @click="updateRoomStatus(room.id, room.status)" class="btn btn-small">更新状态</button>
+              <button @click="showRoomDeleteModal(room.id, room.roomNumber)" class="btn btn-small btn-delete">删除</button>
             </div>
           </div>
         </div>
@@ -350,10 +357,11 @@
       <div class="service-log-tabs">
         <button @click="serviceLogSubTab = 'frontService'" :class="{ active: serviceLogSubTab === 'frontService' }">前台服务</button>
         <button @click="serviceLogSubTab = 'userReview'" :class="{ active: serviceLogSubTab === 'userReview' }">用户评价</button>
+        <button @click="switchToRoomStatus" :class="{ active: serviceLogSubTab === 'roomStatus' }">房间状态</button>
       </div>
       
-      <LoadingSpinner v-if="loadingServiceLogs" variant="admin" :skeleton-count="3" size="small" />
-      <ErrorRetry v-else-if="serviceLogsError" :message="serviceLogsError" @retry="getServiceLogs" />
+      <LoadingSpinner v-if="loadingServiceLogs && serviceLogSubTab !== 'roomStatus'" variant="admin" :skeleton-count="3" size="small" />
+      <ErrorRetry v-else-if="serviceLogsError && serviceLogSubTab !== 'roomStatus'" :message="serviceLogsError" @retry="getServiceLogs" />
       
       <!-- 前台服务子模块 -->
       <div v-else-if="serviceLogSubTab === 'frontService'" class="log-layout">
@@ -509,6 +517,101 @@
           </div>
         </div>
       </div>
+      <!-- 房间状态子模块 -->
+      <div v-else-if="serviceLogSubTab === 'roomStatus'" class="log-layout">
+        <LoadingSpinner v-if="roomStatusLoading" variant="admin" :skeleton-count="3" size="small" />
+        <ErrorRetry v-else-if="roomStatusError" :message="roomStatusError" @retry="getRoomStatusData" />
+        <div v-else class="log-panel log-panel-full">
+          <div class="panel-header">
+            <span class="panel-title">房间状态</span>
+            <span class="panel-count">{{ roomStatusRooms.length }} 间客房</span>
+            <div class="toolbar-sort">
+              <span class="sort-label">排序</span>
+              <select v-model="roomStatusSortKey" class="sort-select">
+                <option value="status">按状态优先级</option>
+                <option value="roomNumber">按房间编号</option>
+                <option value="roomType">按客房类型</option>
+              </select>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div v-if="roomStatusRooms.length === 0" class="empty">
+              <p>暂无房间数据</p>
+            </div>
+            <div v-else class="room-table-wrapper">
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>房间编号</th>
+                      <th>客房类型</th>
+                      <th>容纳人数</th>
+                      <th>价格/晚</th>
+                      <th>当前状态</th>
+                      <th>入住客户</th>
+                      <th>预计退房</th>
+                      <th>操作</th>
+                      <th>清洁状态</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="room in sortedRoomStatusRooms" :key="room.id" :class="'row-status-' + getRoomStatusClass(room.status).replace('status-', '')">
+                      <td class="cell-number">{{ room.roomNumber }}</td>
+                      <td>{{ room.roomType?.name || '-' }}</td>
+                      <td>{{ room.roomType?.capacity || '-' }}人</td>
+                      <td class="cell-price">¥{{ room.roomType?.price || '-' }}</td>
+                      <td>
+                        <span class="status-badge" :class="getRoomStatusClass(room.status)">{{ room.status }}</span>
+                      </td>
+                      <td class="cell-user">
+                        <template v-if="room._guestName">
+                          <span class="guest-name">{{ room._guestName }}</span>
+                        </template>
+                        <span v-else class="no-guest">—</span>
+                      </td>
+                      <td class="cell-date">
+                        <template v-if="room._checkOutTime">
+                          {{ formatDate(room._checkOutTime) }}
+                        </template>
+                        <span v-else class="no-guest">—</span>
+                      </td>
+                      <td>
+                        <button @click="openRoomStatusDialog(room.id, room.status)" class="btn btn-sm">更新</button>
+                      </td>
+                      <td class="cell-cleaning">
+                        <span v-if="room.status === '已完成' && room._cleaningStatus !== 'done'" class="cleaning-badge cleaning-pending" @click="markCleaningDone(room.id)">待清洁</span>
+                        <span v-else-if="room.status === '已完成' && room._cleaningStatus === 'done'" class="cleaning-badge cleaning-done">完成清洁</span>
+                        <span v-else class="no-guest">—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 房间状态弹窗 -->
+    <div v-if="roomStatusShowDialog" class="modal-overlay" @click="closeRoomStatusDialog">
+      <div class="modal-content" @click.stop>
+        <h3>更新客房状态</h3>
+        <div class="form-group">
+          <label>选择状态</label>
+          <select v-model="roomStatusSelectedStatus" class="form-input">
+            <option value="空房">空房</option>
+            <option value="已预订">已预订</option>
+            <option value="已入住">已入住</option>
+            <option value="已完成">已完成</option>
+            <option value="维护中">维护中</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button @click="confirmRoomStatusUpdate" class="btn btn-confirm">确认</button>
+          <button @click="closeRoomStatusDialog" class="btn btn-cancel">取消</button>
+        </div>
+      </div>
     </div>
 
     <!-- 图片查看器 -->
@@ -536,6 +639,17 @@
         </div>
       </div>
     </div>
+    <!-- 房间删除确认弹窗 -->
+    <div v-if="roomDeleteModalVisible" class="modal-overlay">
+      <div class="modal-content">
+        <h3>确认删除</h3>
+        <p>确定要删除房间 <strong>{{ roomDeleteTarget.roomNumber }}</strong> 吗？此操作不可撤销。</p>
+        <div class="modal-actions">
+          <button @click="closeRoomDeleteModal" class="btn">取消</button>
+          <button @click="handleRoomDeleteConfirm" class="btn btn-confirm">确认</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -554,6 +668,7 @@ export default {
   data() {
     return {
       activeTab: 'systemConfig',
+      systemConfigSubTab: 'hotelInfo',
       roomTypes: [],
       rooms: [],
       showRoomList: false,
@@ -637,7 +752,18 @@ export default {
       },
       // 删除确认模态框
       deleteModalVisible: false,
-      currentDeleteUserId: null
+      currentDeleteUserId: null,
+      roomDeleteModalVisible: false,
+      roomDeleteTarget: { id: null, roomNumber: '' },
+      // 房间状态（服务日志子模块）
+      roomStatusRooms: [],
+      roomStatusLoading: false,
+      roomStatusError: null,
+      roomStatusSortKey: 'status',
+      roomStatusShowDialog: false,
+      roomStatusSelectedStatus: '空房',
+      roomStatusCurrentRoomId: null,
+      roomStatusCleaningTimers: {}
     }
   },
   computed: {
@@ -763,6 +889,29 @@ export default {
         pages.push(i)
       }
       return pages
+    },
+    sortedRoomStatusRooms() {
+      const rooms = [...this.roomStatusRooms]
+      if (this.roomStatusSortKey === 'roomNumber') {
+        return rooms.sort((a, b) => (a.roomNumber || '').localeCompare(b.roomNumber || '', undefined, { numeric: true }))
+      }
+      if (this.roomStatusSortKey === 'roomType') {
+        return rooms.sort((a, b) => (a.roomType?.name || '').localeCompare(b.roomType?.name || ''))
+      }
+      const statusPriority = {
+        '已入住': 0,
+        '已完成': 1,
+        '已预订': 2,
+        '已支付': 3,
+        '空房': 4,
+        '维护中': 5
+      }
+      return rooms.sort((a, b) => {
+        const pa = statusPriority[a.status] ?? 99
+        const pb = statusPriority[b.status] ?? 99
+        if (pa !== pb) return pa - pb
+        return (a.roomNumber || '').localeCompare(b.roomNumber || '', undefined, { numeric: true })
+      })
     }
   },
   watch: {
@@ -818,6 +967,8 @@ export default {
     if (this.orderChart) {
       this.orderChart.dispose()
     }
+    Object.values(this.roomStatusCleaningTimers).forEach(t => clearTimeout(t))
+    this.roomStatusCleaningTimers = {}
     window.removeEventListener('resize', this.handleResize)
   },
   methods: {
@@ -996,6 +1147,125 @@ export default {
         return
       }
       this.goToReviewPage(page)
+    },
+    // 房间状态方法
+    switchToRoomStatus() {
+      this.serviceLogSubTab = 'roomStatus'
+      this.getRoomStatusData()
+    },
+    async getRoomStatusData() {
+      this.roomStatusLoading = true
+      this.roomStatusError = null
+      try {
+        const [roomsRes, ordersRes] = await Promise.all([
+          axios.get('/api/user/rooms', {
+            params: { page: 0, size: 200 },
+            withCredentials: true
+          }),
+          axios.get('/api/user/orders', {
+            params: { page: 0, size: 500 },
+            withCredentials: true
+          })
+        ])
+
+        const rooms = roomsRes.data.content || roomsRes.data
+        const ordersData = ordersRes.data.content || ordersRes.data
+
+        const activeOrders = ordersData.filter(o =>
+          o.status === '已入住' || o.status === '已预订' || o.status === '已支付'
+        )
+
+        const roomOrderMap = {}
+        activeOrders.forEach(order => {
+          const roomId = order.room?.id
+          if (roomId) {
+            const existing = roomOrderMap[roomId]
+            if (!existing || new Date(order.checkInTime) > new Date(existing.checkInTime)) {
+              roomOrderMap[roomId] = order
+            }
+          }
+        })
+
+        this.roomStatusRooms = rooms.map(room => {
+          const order = roomOrderMap[room.id]
+          const existingRoom = this.roomStatusRooms.find(r => r.id === room.id)
+          return {
+            ...room,
+            _guestName: order?.user?.name || order?.user?.username || null,
+            _checkOutTime: order?.checkOutTime || null,
+            _cleaningStatus: existingRoom?._cleaningStatus || null
+          }
+        })
+      } catch (err) {
+        if (axios.isCancel(err)) return
+        console.error('获取房间状态数据失败:', err)
+        this.roomStatusError = '获取房间数据失败，请检查网络后重试'
+      } finally {
+        this.roomStatusLoading = false
+      }
+    },
+    getRoomStatusClass(status) {
+      switch (status) {
+        case '空房': return 'status-success'
+        case '已预订':
+        case '已支付': return 'status-warning'
+        case '已入住': return 'status-info'
+        case '已完成': return 'status-warning'
+        case '维护中': return 'status-danger'
+        default: return 'status-info'
+      }
+    },
+    openRoomStatusDialog(roomId, currentStatus) {
+      this.roomStatusCurrentRoomId = roomId
+      this.roomStatusSelectedStatus = currentStatus || '空房'
+      this.roomStatusShowDialog = true
+    },
+    closeRoomStatusDialog() {
+      this.roomStatusShowDialog = false
+      this.roomStatusCurrentRoomId = null
+      this.roomStatusSelectedStatus = '空房'
+    },
+    async confirmRoomStatusUpdate() {
+      if (!this.roomStatusCurrentRoomId) return
+      try {
+        const response = await axios.put(
+          `/api/user/admin/rooms/${this.roomStatusCurrentRoomId}/status?status=${encodeURIComponent(this.roomStatusSelectedStatus)}`,
+          {},
+          { withCredentials: true }
+        )
+        if (response.data) {
+          alert('房间状态更新成功')
+          this.getRoomStatusData()
+          this.closeRoomStatusDialog()
+        }
+      } catch (err) {
+        console.error('更新房间状态失败:', err)
+        alert('更新房间状态失败，请稍后重试')
+      }
+    },
+    markCleaningDone(roomId) {
+      const room = this.roomStatusRooms.find(r => r.id === roomId)
+      if (!room || room._cleaningStatus === 'done') return
+      this.$set(room, '_cleaningStatus', 'done')
+      if (this.roomStatusCleaningTimers[roomId]) {
+        clearTimeout(this.roomStatusCleaningTimers[roomId])
+      }
+      this.roomStatusCleaningTimers[roomId] = setTimeout(() => {
+        this.$delete(this.roomStatusCleaningTimers, roomId)
+        this.resetRoomToVacant(roomId)
+      }, 2000)
+    },
+    async resetRoomToVacant(roomId) {
+      try {
+        await axios.put(
+          `/api/user/admin/rooms/${roomId}/status?status=${encodeURIComponent('空房')}`,
+          {},
+          { withCredentials: true }
+        )
+        this.getRoomStatusData()
+      } catch (err) {
+        console.error('重置房间状态失败:', err)
+      }
     },
     // 图片查看器
     parseReviewImages(images) {
@@ -1394,18 +1664,19 @@ export default {
           }
         }
         const response = await axios.post('/api/user/admin/rooms', roomData, { withCredentials: true })
-        if (response.data) {
-          alert('房间添加成功')
+        if (response.data.success) {
+          alert(response.data.message)
           this.getRooms()
           this.roomForm = {
             roomNumber: '',
             roomTypeId: '',
-            status: '可用'
+            status: '空房'
           }
+        } else {
+          alert(response.data.message || '添加失败')
         }
       } catch (error) {
         console.error('添加房间失败:', error)
-        console.error('错误详情:', error.response?.data)
         alert('添加房间失败，请稍后重试')
       }
     },
@@ -1419,6 +1690,32 @@ export default {
       } catch (error) {
         console.error('更新房间状态失败:', error)
         alert('更新房间状态失败，请稍后重试')
+      }
+    },
+    showRoomDeleteModal(roomId, roomNumber) {
+      this.roomDeleteTarget = { id: roomId, roomNumber }
+      this.roomDeleteModalVisible = true
+    },
+    closeRoomDeleteModal() {
+      this.roomDeleteModalVisible = false
+      this.roomDeleteTarget = { id: null, roomNumber: '' }
+    },
+    async handleRoomDeleteConfirm() {
+      const roomId = this.roomDeleteTarget.id
+      if (!roomId) return
+      try {
+        const response = await axios.delete(`/api/user/admin/rooms/${roomId}`, { withCredentials: true })
+        if (response.data.success) {
+          alert('房间删除成功')
+          this.getRooms()
+        } else {
+          alert(response.data.message || '删除失败')
+        }
+      } catch (error) {
+        console.error('删除房间失败:', error)
+        alert('删除房间失败，请稍后重试')
+      } finally {
+        this.closeRoomDeleteModal()
       }
     },
     async updateOrderStatus(orderId, status) {
@@ -2398,5 +2695,109 @@ export default {
 @media (max-width: 768px) {
   .viewer-prev { left: 10px; }
   .viewer-next { right: 10px; }
+}
+
+/* 房间状态表格 */
+.toolbar-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.sort-label {
+  color: var(--text-light);
+  font-size: 0.85rem;
+}
+
+.sort-select {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-white);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.sort-select:focus {
+  border-color: var(--primary-color);
+}
+
+.room-table-wrapper {
+  margin-top: 0.5rem;
+}
+
+.cell-number {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cell-price {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.guest-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.no-guest {
+  color: var(--text-light);
+}
+
+.row-status-success { }
+.row-status-warning { background-color: #fffdf5; }
+.row-status-info { background-color: #f6faff; }
+.row-status-danger { background-color: #fefafa; }
+
+td .btn-sm {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.cleaning-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.cleaning-pending {
+  color: #e6a23c;
+  background: #fdf6ec;
+  border: 1px solid #f5dab1;
+  cursor: pointer;
+}
+
+.cleaning-pending:hover {
+  background: #faead7;
+}
+
+.cleaning-done {
+  color: #67c23a;
+  background: #f0f9eb;
+  border: 1px solid #c2e7b0;
+}
+
+.cell-cleaning {
+  text-align: center;
+}
+
+.cell-user {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-date {
+  white-space: nowrap;
+  font-size: 0.85rem;
 }
 </style>
