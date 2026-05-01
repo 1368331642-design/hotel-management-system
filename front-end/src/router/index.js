@@ -29,10 +29,7 @@ const routes = [
   {
     path: '/booking',
     name: 'Booking',
-    component: () => import('../views/Booking.vue'),
-    meta: {
-      requiresAuth: true
-    }
+    component: () => import('../views/Booking.vue')
   },
   {
     path: '/orders',
@@ -82,6 +79,24 @@ const routes = [
     meta: {
       requiresAuth: true
     }
+  },
+  {
+    path: '/admin/logs',
+    name: 'AdminLogs',
+    component: () => import('../views/Admin.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true
+    }
+  },
+  {
+    path: '/admin/finance',
+    name: 'Finance',
+    component: () => import('../views/Finance.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true
+    }
   }
 ]
 
@@ -92,14 +107,30 @@ const router = createRouter({
 
 // 路由守卫，用于权限控制
 router.beforeEach((to, from, next) => {
-  const user = sessionStorage.getItem('user')
+  const userStr = sessionStorage.getItem('user')
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
   
-  if (requiresAuth && !user) {
+  if (requiresAuth && !userStr) {
     next('/login')
-  } else {
-    next()
+    return
   }
+  
+  if (requiresAdmin && userStr) {
+    try {
+      const user = JSON.parse(userStr)
+      const isAdmin = user.username === 'admin' || (user.roles && user.roles.some(role => role.name === 'ADMIN'))
+      if (!isAdmin) {
+        next('/')
+        return
+      }
+    } catch (e) {
+      next('/login')
+      return
+    }
+  }
+  
+  next()
 })
 
 export default router

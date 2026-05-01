@@ -1,7 +1,18 @@
 <template>
   <div class="profile">
     <h2>个人中心</h2>
-    <div class="profile-tabs">
+
+    <!-- 未登录提示横幅 -->
+    <div v-if="!isLoggedIn" class="login-prompt-banner">
+      <div class="login-prompt-content">
+        <span class="login-prompt-text">登录后可管理个人信息、查看我的订单</span>
+        <button @click="goToLogin" class="login-prompt-btn">登录系统</button>
+        <router-link to="/register" class="login-prompt-register">注册账号</router-link>
+      </div>
+    </div>
+
+    <template v-else>
+      <div class="profile-tabs">
       <button @click="activeTab = 'personalInfo'" :class="{ active: activeTab === 'personalInfo' }">个人信息</button>
       <button @click="activeTab = 'orderHistory'" :class="{ active: activeTab === 'orderHistory' }">我的订单</button>
     </div>
@@ -66,48 +77,147 @@
       <div class="order-tabs">
         <button @click="orderTab = 'pending'" :class="{ active: orderTab === 'pending' }">待支付</button>
         <button @click="orderTab = 'current'" :class="{ active: orderTab === 'current' }">已支付</button>
+        <button @click="orderTab = 'reviews'; loadMyReviews()" :class="{ active: orderTab === 'reviews' }">我的评价</button>
       </div>
-      <!-- 已支付子标签 -->
       <div v-if="orderTab === 'current'" class="sub-order-tabs">
         <button @click="subOrderTab = 'uncheckin'" :class="{ active: subOrderTab === 'uncheckin' }">未入住订单</button>
         <button @click="subOrderTab = 'checkedin'" :class="{ active: subOrderTab === 'checkedin' }">已入住订单</button>
         <button @click="subOrderTab = 'history'" :class="{ active: subOrderTab === 'history' }">历史订单</button>
       </div>
       <!-- 批量删除按钮 -->
-      <div v-if="orderTab === 'current' && subOrderTab === 'history' && filteredOrders.length > 0" class="batch-actions">
-        <button v-if="showSelectAll" @click="selectAllOrders" class="btn btn-select-all">全选</button>
-        <button v-if="showSelectAll" @click="showBatchDeleteModal" class="btn btn-batch-delete" :disabled="selectedOrders.length === 0">批量删除</button>
-        <button v-if="showSelectAll" @click="toggleSelectAll" class="btn btn-cancel">取消</button>
-        <button v-else @click="toggleSelectAll" class="btn btn-batch-delete">批量删除</button>
+      <div v-if="orderTab === 'current' && subOrderTab === 'history' && historyOrders.length > 0" class="batch-actions">
+        <template v-if="showSelectAll">
+          <button @click="selectAllOrders" class="btn btn-sm btn-ghost">全选</button>
+          <button @click="showBatchDeleteModal" class="btn btn-sm btn-danger" :disabled="selectedOrders.length === 0">
+            批量删除<span v-if="selectedOrders.length > 0">（{{ selectedOrders.length }}）</span>
+          </button>
+          <button @click="toggleSelectAll" class="btn btn-sm btn-ghost">取消</button>
+        </template>
+        <button v-else @click="toggleSelectAll" class="btn btn-sm btn-danger-outline">批量删除</button>
       </div>
-      <div class="list">
-        <div v-for="order in filteredOrders" :key="order.id" class="item">
-          <div class="order-content">
-            <!-- 历史订单添加复选框 -->
+      <div v-if="orderTab !== 'reviews'" class="list">
+        <div v-if="subOrderTab === 'history' && historyLoading" class="loading">
+          <div class="loading-spinner"></div>
+          <p>正在加载数据...</p>
+        </div>
+        <div v-else-if="subOrderTab === 'history' && historyLoadError" class="error-state">
+          <p>加载失败，请重试</p>
+          <button @click="getOrders" class="retry-btn">重新加载</button>
+        </div>
+        <template v-else>
+          <div v-if="subOrderTab === 'history' && paginatedHistoryOrders.length === 0" class="empty">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 12h6m-6 4h6m-2-12h4a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />
+            </svg>
+            <p>暂无历史订单</p>
+          </div>
+          <div v-for="order in (subOrderTab === 'history' ? paginatedHistoryOrders : filteredOrders)" v-else :key="order.id" class="item" :class="{ 'has-checkbox': showSelectAll && orderTab === 'current' && subOrderTab === 'history' }">
             <div v-if="showSelectAll && orderTab === 'current' && subOrderTab === 'history'" class="checkbox-wrapper">
               <input type="checkbox" :value="order.id" v-model="selectedOrders">
             </div>
-            <p>订单号: {{ order.orderNumber }}</p>
-            <p>房间号: {{ order.room.roomNumber }}</p>
-            <p>房型: {{ order.room.roomType.name }}</p>
-            <p>住房日期: {{ formatDate(order.checkInTime) }} 至 {{ formatDate(order.checkOutTime) }}</p>
-            <p>住房时间: {{ calculateStayDuration(order.checkInTime, order.checkOutTime) }}</p>
-            <p>总价: ¥{{ order.totalPrice }}</p>
-            <p>状态: {{ order.status === '待支付' ? '已预定' : order.status }}</p>
-            <p v-if="order.status === '待支付'">支付倒计时: <span class="countdown" :class="{ 'countdown-expired': getCountdown(order.createTime) <= 0 }">{{ formatCountdown(getCountdown(order.createTime)) }}</span></p>
-            <div class="order-actions" v-if="order.status === '待支付'">
-              <button @click="goToPayment(order.id)" class="btn btn-pay">去支付</button>
+            <div class="order-body">
+              <div class="order-content">
+                <p>订单号: {{ order.orderNumber }}</p>
+                <p>房间号: {{ order.room.roomNumber }}</p>
+                <p>房型: {{ order.room.roomType.name }}</p>
+                <p>住房日期: {{ formatDate(order.checkInTime) }} 至 {{ formatDate(order.checkOutTime) }}</p>
+                <p>住房时间: {{ calculateStayDuration(order.checkInTime, order.checkOutTime) }}</p>
+                <p>总价: ¥{{ order.totalPrice }}</p>
+                <p>状态: {{ order.status === '待支付' ? '已预定' : order.status }}</p>
+                <p v-if="order.status === '待支付'">支付倒计时: <span class="countdown" :class="{ 'countdown-expired': getCountdown(order.createTime) <= 0 }">{{ formatCountdown(getCountdown(order.createTime)) }}</span></p>
+                <div class="order-actions" v-if="order.status === '待支付'">
+                  <button @click="goToPayment(order.id)" class="btn btn-pay">去支付</button>
+                </div>
+              </div>
+              </div>
+            <div v-if="orderTab === 'current' && subOrderTab === 'history'" class="delete-button-wrapper">
+              <button v-if="isOrderReviewed(order)" disabled class="btn btn-reviewed-disabled">已评价</button>
+              <button v-else @click="openOrderReviewModal(order)" class="btn btn-review-small">评价</button>
+              <button @click="showDeleteModal(order.id)" class="btn btn-delete-small">删除订单</button>
             </div>
           </div>
-          <div v-if="orderTab === 'current' && subOrderTab === 'history'" class="delete-button-wrapper">
-            <button @click="showDeleteModal(order.id)" class="btn btn-delete-small">删除订单</button>
-          </div>
-        </div>
-        <div v-if="filteredOrders.length === 0" class="empty">
+        </template>
+        <div v-if="subOrderTab !== 'history' && filteredOrders.length === 0" class="empty">
           <p v-if="orderTab === 'pending'">暂无待支付的订单</p>
           <p v-else-if="orderTab === 'current' && subOrderTab === 'uncheckin'">暂无未入住的订单</p>
           <p v-else-if="orderTab === 'current' && subOrderTab === 'checkedin'">暂无已入住的订单</p>
-          <p v-else>暂无历史订单</p>
+          <p v-else>暂无订单</p>
+        </div>
+      </div>
+
+      <!-- 历史订单分页 -->
+      <div v-if="subOrderTab === 'history' && historyTotalElements > 0" class="pagination-wrapper">
+        <div class="pagination-top-row">
+          <div class="pagination-info">
+            共 {{ historyTotalElements }} 条记录，第 {{ historyCurrentPage }} / {{ historyTotalPages }} 页
+          </div>
+          <div class="page-size-selector">
+            <span>每页</span>
+            <select v-model.number="historyPageSize" @change="historyChangePageSize" class="page-size-select">
+              <option v-for="size in historyPageSizeOptions" :key="size" :value="size">{{ size }}</option>
+            </select>
+            <span>条</span>
+          </div>
+        </div>
+        <div class="pagination">
+          <button @click="historyGoToPage(1)" :disabled="!historyHasPrevPage" class="page-btn" title="第一页">«</button>
+          <button @click="historyGoToPrevPage" :disabled="!historyHasPrevPage" class="page-btn">上一页</button>
+
+          <div class="page-numbers">
+            <template v-for="(page, idx) in historyVisiblePages" :key="idx">
+              <span v-if="page === -1" class="ellipsis">...</span>
+              <button
+                v-else
+                @click="historyGoToPage(page)"
+                :class="['page-number', { active: historyCurrentPage === page }]"
+              >
+                {{ page }}
+              </button>
+            </template>
+          </div>
+
+          <button @click="historyGoToNextPage" :disabled="!historyHasNextPage" class="page-btn">下一页</button>
+          <button @click="historyGoToPage(historyTotalPages)" :disabled="!historyHasNextPage" class="page-btn" title="最后一页">»</button>
+        </div>
+
+        <div class="jump-page">
+          <span>跳至</span>
+          <input type="number" v-model.number="historyJumpPage" @keyup.enter="historyHandleJumpPage" min="1" :max="historyTotalPages" />
+          <span>页</span>
+          <button @click="historyHandleJumpPage" class="jump-btn">跳转</button>
+        </div>
+      </div>
+
+      <!-- 我的评价 -->
+      <div v-if="orderTab === 'reviews'" class="reviews-panel">
+        <div v-if="myReviews.length === 0 && !loadingReviews" class="empty">
+          <p>暂无评价记录</p>
+        </div>
+        <div v-else-if="loadingReviews" class="loading">
+          <p>加载中...</p>
+        </div>
+        <div v-else class="reviews-list">
+          <div v-for="review in myReviews" :key="review.id" class="review-card">
+            <div class="review-card-header">
+              <span class="review-type-badge">订单评价</span>
+              <span class="review-time">{{ formatDate(review.createTime) }}</span>
+            </div>
+            <div class="review-card-body">
+              <p class="review-content-text">{{ review.content }}</p>
+            </div>
+            <div v-if="review.rating" class="review-card-footer">
+              <div class="review-rating-display">
+                <span v-for="i in 5" :key="i" class="star" :class="{ filled: i <= review.rating }">★</span>
+                <span class="rating-num">{{ review.rating }} 分</span>
+              </div>
+              <p v-if="review.review" class="review-text">"{{ review.review }}"</p>
+            </div>
+            <!-- 评价图片 -->
+            <div v-if="parseReviewImages(review.images).length > 0" class="review-images">
+              <img v-for="(img, idx) in parseReviewImages(review.images)" :key="idx"
+                :src="img" alt="评价图片" class="review-thumb" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -172,6 +282,58 @@
         </div>
       </div>
     </div>
+    <!-- 订单评价弹窗 -->
+    <div v-if="orderReviewModalVisible" class="modal-overlay" @click.self="closeOrderReviewModal">
+      <div class="modal-content review-modal-content">
+        <h3>评价订单</h3>
+        <p class="review-order-info">{{ currentReviewOrder?.room?.roomType?.name }} - {{ currentReviewOrder?.room?.roomNumber }}</p>
+        <div class="rating-section">
+          <label class="rating-label">评分</label>
+          <div class="star-rating" @mouseleave="hoverRating = 0">
+            <span v-for="i in 5" :key="i" class="star"
+              :class="{ filled: (hoverRating || orderReviewForm.rating) >= i }"
+              @mouseenter="hoverRating = i"
+              @click="orderReviewForm.rating = i">★</span>
+          </div>
+          <p v-if="!orderReviewForm.rating && showOrderRatingError" class="error-text">请选择评分</p>
+        </div>
+        <div class="form-group">
+          <label for="orderReviewContent">评价内容（选填，最多500字）</label>
+          <textarea id="orderReviewContent" v-model="orderReviewForm.content" maxlength="500" placeholder="请写下您的评价..."></textarea>
+          <div class="char-counter">{{ orderReviewForm.content.length }}/500</div>
+        </div>
+        <!-- 图片上传 -->
+        <div class="form-group">
+          <label>上传图片（选填，最多5张）</label>
+          <div class="image-upload-area">
+            <div v-for="(img, idx) in reviewImages" :key="idx" class="image-preview-item">
+              <img :src="img.preview" alt="预览" class="preview-img" />
+              <button @click="removeReviewImage(idx)" class="btn-remove-img" title="删除">×</button>
+              <div v-if="img.uploading" class="upload-progress">
+                <div class="progress-bar">
+                  <div class="progress-fill" :style="{ width: img.progress + '%' }"></div>
+                </div>
+              </div>
+            </div>
+            <label v-if="reviewImages.length < 5" class="image-add-btn" :class="{ disabled: uploadingImages }">
+              <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple
+                @change="handleReviewImageSelect" :disabled="uploadingImages" style="display:none" />
+              <span class="add-icon">+</span>
+              <span class="add-text">添加图片</span>
+            </label>
+          </div>
+          <p v-if="uploadError" class="error-text">{{ uploadError }}</p>
+          <p class="upload-hint">支持 jpg/png/gif/webp，单张≤5MB</p>
+        </div>
+        <div class="modal-actions">
+          <button @click="closeOrderReviewModal" class="btn btn-cancel">取消</button>
+          <button @click="submitOrderReview" class="btn btn-confirm" :disabled="orderReviewSubmitting">
+            {{ orderReviewSubmitting ? '提交中...' : '提交评价' }}
+          </button>
+        </div>
+      </div>
+    </div>
+    </template>
   </div>
 </template>
 
@@ -182,6 +344,7 @@ export default {
   name: 'Profile',
   data() {
     return {
+      isLoggedIn: false,
       activeTab: 'personalInfo',
       userInfo: {
         id: null,
@@ -205,6 +368,13 @@ export default {
       subOrderTab: 'uncheckin',
       selectedOrders: [],
       showSelectAll: false,
+      historyCurrentPage: 1,
+      historyPageSize: 5,
+      historyPageSizeOptions: [5, 10, 20],
+      historyTotalElements: 0,
+      historyJumpPage: 1,
+      historyLoading: false,
+      historyLoadError: false,
       passwordForm: {
         oldPassword: '',
         newPassword: '',
@@ -213,11 +383,37 @@ export default {
       errorMessage: '',
       successMessage: '',
       countdownTimer: null,
+      countdownNow: Date.now(),
       deleteModalVisible: false,
       currentDeleteOrderId: null,
       batchDeleteModalVisible: false,
       cancelModalVisible: false,
-      currentCancelOrderId: null
+      currentCancelOrderId: null,
+      abortController: null,
+      isDestroyed: false,
+      // 订单评价
+      orderReviewModalVisible: false,
+      currentReviewOrder: null,
+      orderReviewForm: { rating: 0, content: '' },
+      hoverRating: 0,
+      orderReviewSubmitting: false,
+      showOrderRatingError: false,
+      // 评价图片
+      reviewImages: [],
+      uploadingImages: false,
+      uploadError: '',
+      // 我的评价
+      myReviews: [],
+      loadingReviews: false
+    }
+  },
+  watch: {
+    subOrderTab(val) {
+      if (val === 'history') {
+        this.loadMyReviews()
+        this.historyCurrentPage = 1
+        this.historyJumpPage = 1
+      }
     }
   },
   computed: {
@@ -230,9 +426,9 @@ export default {
         )
       } else if (this.orderTab === 'current') {
         if (this.subOrderTab === 'uncheckin') {
-          // 未入住订单：已预订、已支付（不包括已入住、已退房）
+          // 未入住订单：已预订、已支付（不包括已入住、已退房、自动退房）
           filtered = this.orders.filter(order => 
-            (order.status === '已预订' || order.status === '已支付') && order.status !== '已入住' && order.status !== '已退房'
+            (order.status === '已预订' || order.status === '已支付') && order.status !== '已入住' && order.status !== '已退房' && order.status !== '自动退房'
           )
         } else if (this.subOrderTab === 'checkedin') {
           // 已入住订单
@@ -240,27 +436,127 @@ export default {
             order.status === '已入住'
           )
         } else {
-          // 历史订单：已完成、已取消、已退房
+          // 历史订单：已完成、已取消、已退房、自动退房
           filtered = this.orders.filter(order => 
-            order.status === '已完成' || order.status === '已取消' || order.status === '已退房'
+            order.status === '已完成' || order.status === '已取消' || order.status === '已退房' || order.status === '自动退房'
           )
         }
       }
       // 按创建时间倒序排序，最新的在上面
       return filtered.sort((a, b) => new Date(b.createTime) - new Date(a.createTime))
+    },
+    historyOrders() {
+      if (this.orderTab !== 'current' || this.subOrderTab !== 'history') return []
+      return [...this.filteredOrders].sort((a, b) => {
+        const timeA = a.checkOutTime ? new Date(a.checkOutTime).getTime() : new Date(a.createTime).getTime()
+        const timeB = b.checkOutTime ? new Date(b.checkOutTime).getTime() : new Date(b.createTime).getTime()
+        return timeB - timeA
+      })
+    },
+    historyTotalPages() {
+      return Math.ceil(this.historyOrders.length / this.historyPageSize) || 1
+    },
+    paginatedHistoryOrders() {
+      const totalPages = this.historyTotalPages
+      if (this.historyCurrentPage > totalPages) {
+        this.historyCurrentPage = Math.max(1, totalPages)
+      }
+      this.historyTotalElements = this.historyOrders.length
+      const start = (this.historyCurrentPage - 1) * this.historyPageSize
+      const end = start + this.historyPageSize
+      return this.historyOrders.slice(start, end)
+    },
+    historyHasPrevPage() {
+      return this.historyCurrentPage > 1
+    },
+    historyHasNextPage() {
+      return this.historyCurrentPage < this.historyTotalPages
+    },
+    historyVisiblePages() {
+      const pages = []
+      let start = Math.max(1, this.historyCurrentPage - 2)
+      let end = Math.min(this.historyTotalPages, this.historyCurrentPage + 2)
+
+      if (start > 1) {
+        pages.push(1)
+        if (start > 2) {
+          pages.push(-1)
+        }
+      }
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+
+      if (end < this.historyTotalPages) {
+        if (end < this.historyTotalPages - 1) {
+          pages.push(-1)
+        }
+        pages.push(this.historyTotalPages)
+      }
+
+      return pages
     }
   },
+  created() {
+    // 在组件渲染前检查登录状态，避免白屏
+    this.checkLoginStatus()
+  },
   mounted() {
-    // 页面加载时从localStorage初始化用户信息
+    // 已登录才执行数据加载等操作
+    if (!this.isLoggedIn) return
+
+    // 页面加载时初始化用户信息
     this.initUserInfo()
     this.getOrders()
     const tab = this.$route.query.tab
     if (tab === 'orderHistory') {
       this.activeTab = 'orderHistory'
+      this.orderTab = 'current'
+    }
+    const subTab = this.$route.query.subTab
+    if (subTab === 'history') {
+      this.subOrderTab = 'history'
+      this.historyCurrentPage = 1
+      this.historyJumpPage = 1
     }
     this.startCountdownTimer()
   },
+  beforeUnmount() {
+    this.isDestroyed = true
+    if (this.abortController) {
+      this.abortController.abort()
+      this.abortController = null
+    }
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer)
+      this.countdownTimer = null
+    }
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange)
+  },
   methods: {
+    goToLogin() {
+      this.$router.push('/login/select')
+    },
+    // 检查登录状态 - 在 created 中调用，确保首次渲染前状态正确
+    checkLoginStatus() {
+      try {
+        const userStr = sessionStorage.getItem('user')
+        if (!userStr) {
+          this.isLoggedIn = false
+          return
+        }
+        const user = JSON.parse(userStr)
+        if (!user || !user.id) {
+          this.isLoggedIn = false
+          return
+        }
+        this.isLoggedIn = true
+      } catch (e) {
+        console.error('检查登录状态失败:', e)
+        this.isLoggedIn = false
+      }
+    },
     // 初始化用户信息 - 仅在页面加载时调用
     initUserInfo() {
       const user = sessionStorage.getItem('user')
@@ -349,37 +645,35 @@ export default {
       }
     },
     async getOrders() {
+      if (this.isDestroyed) return
       try {
+        if (this.abortController) {
+          this.abortController.abort()
+        }
+        this.abortController = new AbortController()
         const response = await axios.get('/api/user/orders', {
           params: {
-            page: 0, // 获取全部订单
-            size: 1000
+            page: 0,
+            size: 100
           },
-          withCredentials: true
+          withCredentials: true,
+          signal: this.abortController.signal
         })
-        // 使用内存中的用户信息，而不是直接从localStorage读取
+        if (this.isDestroyed) return
         if (this.userInfo && this.userInfo.id) {
-          // 处理Page对象，取content中的数据
           const ordersData = response.data.content || response.data
-          // 过滤出当前用户的订单
-          let userOrders = ordersData.filter(order => order.user?.id === this.userInfo.id)
-          
-          // 对订单进行去重，保留最新的订单
-          // 按房间 ID 和日期进行分组
+          let userOrders = ordersData.filter(order => order.user && order.user.id === this.userInfo.id)
           const orderMap = new Map()
           userOrders.forEach(order => {
-            // 生成唯一键：房间 ID + 入住时间 + 退房时间
             const key = `${order.room?.id}-${order.checkInTime}-${order.checkOutTime}`
-            // 如果键不存在，或者当前订单的创建时间比已存在的订单晚，则更新
             if (!orderMap.has(key) || new Date(order.createTime) > new Date(orderMap.get(key).createTime)) {
               orderMap.set(key, order)
             }
           })
-          
-          // 将 Map 转换回数组
           this.orders = Array.from(orderMap.values())
         }
       } catch (error) {
+        if (axios.isCancel(error)) return
         console.error('获取订单失败:', error)
       }
     },
@@ -433,11 +727,12 @@ export default {
       return order.status === '已入住' && now < checkOutTime
     },
     async earlyCheckOut(orderId) {
-      if (confirm('确定要提前退房吗？')) {
+      if (confirm('确定要提前退房吗？退房后订单将移至历史订单。')) {
         try {
           const response = await axios.put(`/api/user/orders/${orderId}/status?status=已完成`, {}, { withCredentials: true })
           if (response.data) {
-            alert('提前退房成功')
+            alert('退房成功！订单已移至历史订单。')
+            this.subOrderTab = 'history'
             this.getOrders()
           }
         } catch (error) {
@@ -445,6 +740,37 @@ export default {
           alert('提前退房失败，请稍后重试')
         }
       }
+    },
+    historyGoToPage(page) {
+      if (page < 1 || page > this.historyTotalPages) return
+      this.historyLoading = true
+      this.historyCurrentPage = page
+      this.historyJumpPage = page
+      this.$nextTick(() => {
+        this.historyLoading = false
+      })
+    },
+    historyGoToPrevPage() {
+      if (this.historyHasPrevPage) {
+        this.historyGoToPage(this.historyCurrentPage - 1)
+      }
+    },
+    historyGoToNextPage() {
+      if (this.historyHasNextPage) {
+        this.historyGoToPage(this.historyCurrentPage + 1)
+      }
+    },
+    historyHandleJumpPage() {
+      let page = parseInt(this.historyJumpPage)
+      if (isNaN(page) || page < 1 || page > this.historyTotalPages) {
+        this.historyJumpPage = this.historyCurrentPage
+        return
+      }
+      this.historyGoToPage(page)
+    },
+    historyChangePageSize() {
+      this.historyCurrentPage = 1
+      this.historyJumpPage = 1
     },
     canDeleteOrder(order) {
       return true
@@ -494,10 +820,9 @@ export default {
       this.$router.push(`/booking?orderId=${orderId}&pay=true`)
     },
     getCountdown(createTime) {
-      // 计算15分钟倒计时
+      // 计算15分钟倒计时 - 使用响应式的 countdownNow 驱动实时更新
       const createDate = new Date(createTime)
-      const now = new Date()
-      const diff = createDate.getTime() + 15 * 60 * 1000 - now.getTime()
+      const diff = createDate.getTime() + 15 * 60 * 1000 - this.countdownNow
       return Math.max(0, Math.floor(diff / 1000))
     },
     formatCountdown(seconds) {
@@ -506,20 +831,26 @@ export default {
       return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
     },
     startCountdownTimer() {
-      // 启动倒计时定时器，每5秒钟检查一次
       this.countdownTimer = setInterval(() => {
-        // 检查所有待支付订单的倒计时
+        if (this.isDestroyed) {
+          clearInterval(this.countdownTimer)
+          return
+        }
+        this.countdownNow = Date.now()
         this.orders.forEach(order => {
           if (order.status === '待支付' && this.getCountdown(order.createTime) <= 0) {
-            // 倒计时结束，自动取消订单
             this.cancelOrder(order.id)
           }
         })
-        // 只有当页面可见时才刷新订单列表
-        if (document.visibilityState === 'visible') {
-          this.getOrders()
-        }
-      }, 5000) // 每5秒钟检查一次
+      }, 1000)
+      document.addEventListener('visibilitychange', this.handleVisibilityChange)
+    },
+    handleVisibilityChange() {
+      if (this.isDestroyed) return
+      if (document.visibilityState === 'visible') {
+        this.countdownNow = Date.now()
+        this.getOrders()
+      }
     },
     formatDate(dateString) {
       const date = new Date(dateString)
@@ -533,12 +864,11 @@ export default {
       return `${diffDays}天`
     },
     selectAllOrders() {
-      if (this.selectedOrders.length === this.filteredOrders.length) {
-        // 取消全选
+      const orders = this.subOrderTab === 'history' ? this.paginatedHistoryOrders : this.filteredOrders
+      if (this.selectedOrders.length === orders.length) {
         this.selectedOrders = []
       } else {
-        // 全选
-        this.selectedOrders = this.filteredOrders.map(order => order.id)
+        this.selectedOrders = orders.map(order => order.id)
       }
     },
     async toggleSelectAll() {
@@ -652,6 +982,159 @@ export default {
         console.error('修改密码失败:', error)
         this.errorMessage = error.response?.data?.message || '修改密码失败，请稍后重试'
       }
+    },
+    // 订单评价
+    openOrderReviewModal(order) {
+      this.currentReviewOrder = order
+      this.orderReviewForm = { rating: 0, content: '' }
+      this.hoverRating = 0
+      this.showOrderRatingError = false
+      this.reviewImages = []
+      this.uploadError = ''
+      this.orderReviewModalVisible = true
+    },
+    closeOrderReviewModal() {
+      this.orderReviewModalVisible = false
+      this.currentReviewOrder = null
+      this.orderReviewForm = { rating: 0, content: '' }
+      this.hoverRating = 0
+      this.showOrderRatingError = false
+      this.reviewImages = []
+      this.uploadError = ''
+    },
+    async submitOrderReview() {
+      if (this.orderReviewForm.rating < 1 || this.orderReviewForm.rating > 5) {
+        this.showOrderRatingError = true
+        return
+      }
+      this.orderReviewSubmitting = true
+      try {
+        const userStr = sessionStorage.getItem('user')
+        const user = userStr ? JSON.parse(userStr) : null
+        const imageUrls = this.reviewImages.map(img => img.url).filter(Boolean)
+        const imagesJson = imageUrls.length > 0 ? JSON.stringify(imageUrls) : null
+        await axios.post('/api/admin/service-logs', {
+          type: '订单评价',
+          content: `${this.currentReviewOrder?.room?.roomType?.name} ${this.currentReviewOrder?.room?.roomNumber} 订单${this.currentReviewOrder?.orderNumber}`,
+          status: '已处理',
+          rating: this.orderReviewForm.rating,
+          review: this.orderReviewForm.content,
+          images: imagesJson,
+          userId: user?.id
+        }, { withCredentials: true })
+        alert('评价提交成功！')
+        this.closeOrderReviewModal()
+        // 刷新评价列表
+        if (this.orderTab === 'reviews') {
+          this.loadMyReviews()
+        }
+      } catch (error) {
+        console.error('提交评价失败:', error)
+        const retry = confirm('评价提交失败，是否重试？')
+        if (retry) {
+          this.submitOrderReview()
+        }
+      } finally {
+        this.orderReviewSubmitting = false
+      }
+    },
+    // 图片选择
+    async handleReviewImageSelect(e) {
+      const files = Array.from(e.target.files)
+      this.uploadError = ''
+      const remaining = 5 - this.reviewImages.length
+      if (files.length > remaining) {
+        this.uploadError = `最多还能上传${remaining}张图片`
+        e.target.value = ''
+        return
+      }
+      for (const file of files) {
+        const ext = file.name.split('.').pop().toLowerCase()
+        if (!['jpg','jpeg','png','gif','webp'].includes(ext)) {
+          this.uploadError = `不支持 ${ext} 格式，仅支持 jpg/png/gif/webp`
+          e.target.value = ''
+          return
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          this.uploadError = `"${file.name}" 超过5MB限制`
+          e.target.value = ''
+          return
+        }
+      }
+      this.uploadingImages = true
+      const previews = files.map(f => ({ file: f, preview: URL.createObjectURL(f), uploading: true, progress: 0, url: null }))
+      this.reviewImages.push(...previews)
+      try {
+        const formData = new FormData()
+        files.forEach(f => formData.append('files', f))
+        const res = await axios.post('/api/upload/review-images', formData, {
+          withCredentials: true,
+          onUploadProgress: (e) => {
+            const pct = Math.round((e.loaded * 100) / e.total)
+            previews.forEach(p => { p.progress = pct })
+          }
+        })
+        if (res.data.success) {
+          const urls = res.data.urls
+          previews.forEach((p, i) => {
+            p.url = urls[i] || null
+            p.uploading = false
+          })
+        } else {
+          this.uploadError = res.data.message
+          previews.forEach(p => {
+            const idx = this.reviewImages.indexOf(p)
+            if (idx >= 0) this.reviewImages.splice(idx, 1)
+          })
+        }
+      } catch (err) {
+        this.uploadError = '图片上传失败：' + (err.response?.data?.message || err.message)
+        previews.forEach(p => {
+          const idx = this.reviewImages.indexOf(p)
+          if (idx >= 0) this.reviewImages.splice(idx, 1)
+        })
+      } finally {
+        this.uploadingImages = false
+        e.target.value = ''
+      }
+    },
+    removeReviewImage(idx) {
+      const img = this.reviewImages[idx]
+      if (img && img.preview && img.preview.startsWith('blob:')) {
+        URL.revokeObjectURL(img.preview)
+      }
+      this.reviewImages.splice(idx, 1)
+      this.uploadError = ''
+    },
+    // 加载我的订单评价
+    async loadMyReviews() {
+      this.loadingReviews = true
+      try {
+        const userStr = sessionStorage.getItem('user')
+        const user = userStr ? JSON.parse(userStr) : null
+        if (!user?.id) {
+          this.myReviews = []
+          return
+        }
+        const response = await axios.get('/api/admin/service-logs/my-reviews', {
+          params: { userId: user.id },
+          withCredentials: true
+        })
+        this.myReviews = response.data
+      } catch (error) {
+        console.error('获取我的评价失败:', error)
+        this.myReviews = []
+      } finally {
+        this.loadingReviews = false
+      }
+    },
+    isOrderReviewed(order) {
+      if (!this.myReviews || !order?.orderNumber) return false
+      return this.myReviews.some(r => r.content && r.content.includes(order.orderNumber))
+    },
+    parseReviewImages(images) {
+      if (!images) return []
+      try { return JSON.parse(images) } catch (e) { return [] }
     }
   }
 }
@@ -663,135 +1146,153 @@ export default {
   margin: 0 auto;
 }
 
+.profile h2 {
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+}
+
 .profile-tabs {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
+  border-bottom: 2px solid var(--border-light);
+  padding-bottom: 0;
   margin-bottom: 2rem;
 }
 
 .profile-tabs button {
-  padding: 0.8rem 1.5rem;
-  background-color: var(--bg-light);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
+  padding: 0.8rem 2rem;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
   cursor: pointer;
-  transition: all 0.3s ease;
-  color: var(--text-primary);
+  color: var(--text-light);
+  font-size: 1.05rem;
+  font-weight: 500;
+  transition: all var(--transition);
+  margin-bottom: -2px;
+  position: relative;
+  letter-spacing: 0.5px;
 }
 
 .profile-tabs button:hover {
-  background-color: var(--border-light);
+  color: var(--primary-color);
+  background-color: rgba(35, 133, 187, 0.04);
 }
 
 .profile-tabs button.active {
-  background-color: var(--primary-color);
-  color: var(--text-white);
-  border-color: var(--primary-color);
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  font-weight: 600;
 }
 
 .order-tabs {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .order-tabs button {
-  padding: 0.6rem 1.2rem;
-  background-color: var(--bg-light);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  padding: 0.6rem 1.4rem;
+  background-color: var(--bg-white);
   color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 0.95rem;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+
+.order-tabs button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0);
+  transition: background var(--transition-fast);
 }
 
 .order-tabs button:hover {
-  background-color: var(--border-light);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.order-tabs button:hover::after {
+  background: rgba(35, 133, 187, 0.04);
+}
+
+.order-tabs button:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .order-tabs button.active {
-  background-color: var(--primary-color);
+  background: var(--primary-gradient);
   color: var(--text-white);
   border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(35, 133, 187, 0.25);
+  font-weight: 600;
+}
+
+.order-tabs button.active:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.35);
 }
 
 .sub-order-tabs {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
-  margin-top: 0.5rem;
-  padding-left: 1rem;
+  flex-wrap: wrap;
 }
 
 .sub-order-tabs button {
-  padding: 0.4rem 0.8rem;
+  padding: 0.45rem 1.1rem;
   background-color: var(--bg-light);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-  color: var(--text-primary);
+  transition: all var(--transition);
+  font-size: 0.88rem;
+  font-weight: 500;
 }
 
 .sub-order-tabs button:hover {
-  background-color: var(--border-light);
+  border-color: var(--primary-light);
+  color: var(--primary-color);
+  background-color: var(--status-info-bg);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.sub-order-tabs button:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .sub-order-tabs button.active {
   background-color: var(--primary-color);
   color: var(--text-white);
   border-color: var(--primary-color);
+  box-shadow: 0 2px 6px rgba(35, 133, 187, 0.2);
 }
 
-.batch-actions {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.btn-select-all {
-  background-color: var(--text-light);
-  color: var(--text-white);
-}
-
-.btn-select-all:hover {
-  background-color: var(--text-secondary);
+.sub-order-tabs button.active:hover {
+  background-color: var(--primary-hover);
+  box-shadow: 0 3px 10px rgba(35, 133, 187, 0.3);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-batch-delete {
-  background-color: var(--status-danger);
-  color: var(--text-white);
-}
-
-.btn-batch-delete:hover:not(:disabled) {
-  background-color: #d94c4c;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-batch-delete:disabled {
-  background-color: var(--text-light);
-  cursor: not-allowed;
-}
-
-.checkbox-wrapper {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-}
-
-.item {
-  position: relative;
 }
 
 .tab-content {
   background-color: var(--bg-white);
   padding: 2rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
 }
 
@@ -810,9 +1311,9 @@ export default {
 .info-form {
   background-color: var(--bg-white);
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-light);
 }
 
 .avatar-section {
@@ -842,7 +1343,7 @@ export default {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background-color: var(--primary-color);
+  background: var(--primary-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -880,25 +1381,25 @@ export default {
 }
 
 .btn-remove:hover {
-  background-color: #d94c4c;
+  background-color: #e04040;
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
 
 .form-input {
   width: 100%;
-  padding: 0.8rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 1.1rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
   box-sizing: border-box;
-  transition: border-color 0.3s ease;
+  transition: all var(--transition);
 }
 
 .form-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(35, 133, 187, 0.2);
+  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
 }
 
 .edit-actions {
@@ -924,7 +1425,7 @@ export default {
 }
 
 .btn-change-password:hover {
-  background-color: #cf8a2e;
+  background-color: #cf9236;
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
@@ -935,7 +1436,7 @@ export default {
 }
 
 .btn-save:hover {
-  background-color: #5aaf2f;
+  background-color: #5daf34;
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
@@ -947,22 +1448,23 @@ export default {
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: bold;
+  font-weight: 600;
   color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 .form-group p {
   margin: 0;
   color: var(--text-primary);
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .list {
   background-color: var(--bg-white);
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-light);
 }
 
 .item {
@@ -971,6 +1473,7 @@ export default {
   margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .item:last-child {
@@ -985,34 +1488,91 @@ export default {
 .item p {
   margin-bottom: 0.5rem;
   color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 .order-actions {
   display: flex;
-  gap: 1rem;
+  gap: 0.8rem;
   margin-top: 1rem;
 }
 
 .delete-button-wrapper {
   display: flex;
   justify-content: flex-end;
+  gap: 0.8rem;
   margin-top: 1rem;
 }
 
-.btn {
-  padding: 0.6rem 1.2rem;
-  background-color: var(--primary-color);
+.btn-review-small {
+  padding: 0.4rem 0.9rem;
+  background-color: var(--status-warning);
   color: var(--text-white);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-size: 0.85rem;
+  transition: all var(--transition);
 }
 
-.btn:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+.btn-review-small:hover {
+  background-color: #cf9236;
+}
+
+.btn-reviewed-disabled {
+  padding: 0.4rem 0.9rem;
+  background-color: var(--bg-light);
+  color: var(--text-light);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  cursor: not-allowed;
+}
+
+.btn-batch-delete {
+  background-color: var(--status-danger);
+  color: var(--text-white);
+}
+
+.btn-batch-delete:hover:not(:disabled) {
+  background-color: #e04040;
+}
+
+.batch-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  background-color: var(--bg-light);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-right: 0.5rem;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+.item.has-checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.item.has-checkbox .order-body {
+  flex: 1;
+  min-width: 0;
 }
 
 .btn-cancel {
@@ -1043,7 +1603,7 @@ export default {
 }
 
 .btn-early-checkout:hover {
-  background-color: #d94c4c;
+  background-color: #e04040;
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
@@ -1054,7 +1614,7 @@ export default {
 }
 
 .btn-pay:hover {
-  background-color: #cf8a2e;
+  background-color: #cf9236;
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
@@ -1065,20 +1625,18 @@ export default {
 }
 
 .btn-delete:hover {
-  background-color: #d94c4c;
+  background-color: #e04040;
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
 
 .btn-confirm {
-  background-color: var(--primary-color);
+  background: var(--primary-gradient);
   color: var(--text-white);
 }
 
 .btn-confirm:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.35);
 }
 
 .btn-delete-small {
@@ -1086,45 +1644,211 @@ export default {
   background-color: var(--status-danger);
   color: var(--text-white);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition);
   font-size: 0.9rem;
 }
 
 .btn-delete-small:hover {
-  background-color: #d94c4c;
+  background-color: #e04040;
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
 
 .empty {
   text-align: center;
-  padding: 3rem;
+  padding: 3rem 2rem;
   color: var(--text-light);
 }
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  stroke: var(--border-color);
+}
+
+.error-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-secondary);
+}
+
+.retry-btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1.5rem;
+  background: var(--primary-gradient);
+  color: var(--text-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all var(--transition);
+}
+
+.retry-btn:hover {
+  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.35);
+  transform: translateY(-1px);
+}
+
+.pagination-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.pagination-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.pagination-info {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.page-size-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.page-size-select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-white);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.page-size-select:hover,
+.page-size-select:focus {
+  border-color: var(--primary-color);
+}
+
+.pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
-.modal-content {
+.page-btn {
+  padding: 0.5rem 1rem;
   background-color: var(--bg-white);
-  padding: 2rem;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: var(--shadow-lg);
+  color: var(--text-primary);
   border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 0.9rem;
+  min-width: 40px;
+}
+
+.page-btn:hover:not(:disabled) {
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  border-color: var(--primary-color);
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.page-number {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--bg-white);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 0.95rem;
+}
+
+.page-number:hover {
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  border-color: var(--primary-color);
+}
+
+.page-number.active {
+  background: var(--primary-gradient);
+  color: var(--text-white);
+  border-color: var(--primary-color);
+}
+
+.ellipsis {
+  padding: 0 0.5rem;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+}
+
+.jump-page {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.jump-page input {
+  width: 56px;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  outline: none;
+  transition: all var(--transition);
+}
+
+.jump-page input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
+}
+
+.jump-btn {
+  padding: 0.35rem 0.8rem;
+  background-color: var(--bg-white);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all var(--transition);
+}
+
+.jump-btn:hover {
+  background-color: var(--primary-color);
+  color: var(--text-white);
 }
 
 .modal-content h3 {
@@ -1142,20 +1866,436 @@ export default {
 
 .message {
   padding: 0.8rem 1rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   margin-bottom: 1rem;
   font-size: 0.95rem;
 }
 
 .message.error {
-  background-color: #ffe9e9;
-  color: #a73333;
-  border: 1px solid #f5c6cb;
+  background-color: var(--status-danger-bg);
+  color: var(--status-danger);
+  border: 1px solid var(--status-danger);
 }
 
 .message.success {
-  background-color: #eaf7ea;
-  color: #2d7a2d;
-  border: 1px solid #c3e6cb;
+  background-color: var(--status-success-bg);
+  color: var(--status-success);
+  border: 1px solid var(--status-success);
+}
+
+.review-modal-content {
+  max-width: 500px;
+}
+
+.review-order-info {
+  text-align: center;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+.rating-section {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.rating-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.star-rating {
+  display: inline-flex;
+  gap: 0.3rem;
+  font-size: 2rem;
+}
+
+.star-rating .star {
+  cursor: pointer;
+  color: var(--border-color);
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.star-rating .star.filled {
+  color: var(--gold);
+}
+
+.star-rating .star:hover {
+  transform: scale(1.2);
+}
+
+.error-text {
+  color: var(--status-danger);
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
+}
+
+.char-counter {
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin-top: 0.3rem;
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 80px;
+  transition: all var(--transition);
+}
+
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
+}
+
+.reviews-panel {
+  padding: 1rem 0;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.review-card {
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 1.2rem;
+  transition: all var(--transition);
+}
+
+.review-card:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border-color);
+}
+
+.review-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.review-type-badge {
+  background: var(--status-warning);
+  color: var(--text-white);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.review-time {
+  color: var(--text-light);
+  font-size: 0.85rem;
+}
+
+.review-card-body {
+  margin-bottom: 0.8rem;
+}
+
+.review-content-text {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.review-card-footer {
+  border-top: 1px solid var(--border-light);
+  padding-top: 0.8rem;
+}
+
+.review-rating-display {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.review-rating-display .star {
+  color: var(--border-color);
+  font-size: 1.2rem;
+}
+
+.review-rating-display .star.filled {
+  color: var(--gold);
+}
+
+.rating-num {
+  margin-left: 0.3rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.review-text {
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.review-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+
+.review-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.review-thumb:hover {
+  transform: scale(1.05);
+}
+
+.image-upload-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.image-preview-item {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-remove-img {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.progress-bar {
+  height: 4px;
+  background: rgba(0,0,0,0.2);
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--primary-color);
+  transition: width 0.3s ease;
+}
+
+.image-add-btn {
+  width: 80px;
+  height: 80px;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-light);
+  transition: all var(--transition);
+}
+
+.image-add-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.image-add-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.add-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.add-text {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.upload-hint {
+  color: var(--text-light);
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+}
+
+@media (max-width: 768px) {
+  .avatar-section {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .profile-tabs button {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+  }
+
+  .order-tabs button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .sub-order-tabs button {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.82rem;
+  }
+
+  .pagination-wrapper {
+    align-items: stretch;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+  }
+
+  .pagination-top-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-tabs {
+    gap: 0;
+  }
+
+  .profile-tabs button {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.9rem;
+    flex: 1;
+    text-align: center;
+  }
+
+  .order-tabs {
+    gap: 0.3rem;
+  }
+
+  .order-tabs button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .sub-order-tabs {
+    gap: 0.3rem;
+  }
+
+  .sub-order-tabs button {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .pagination-wrapper {
+    gap: 0.5rem;
+  }
+
+  .page-btn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.85rem;
+  }
+
+  .page-number {
+    width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+  }
+}
+
+/* ======= 未登录提示横幅 ======= */
+.login-prompt-banner {
+  background: linear-gradient(135deg, #e8f4fa 0%, #f0f7fd 100%);
+  border: 1px solid #c5e2f2;
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.login-prompt-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.login-prompt-text {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.login-prompt-btn {
+  padding: 0.5rem 1.5rem;
+  background: var(--primary-gradient);
+  color: var(--text-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.25);
+  text-decoration: none;
+}
+
+.login-prompt-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(35, 133, 187, 0.35);
+}
+
+.login-prompt-register {
+  color: var(--primary-color);
+  font-size: 0.9rem;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+}
+
+.login-prompt-register:hover {
+  background: rgba(35, 133, 187, 0.08);
 }
 </style>

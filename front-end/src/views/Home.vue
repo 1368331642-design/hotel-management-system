@@ -1,106 +1,17 @@
 <template>
   <div class="home">
-    <div v-if="isAdmin" class="admin-home">
-      <div class="hero">
-        <h2>管理员中心</h2>
-        <p>系统配置管理和数据统计</p>
-        <div class="buttons">
-          <button @click="goToAdmin" class="btn">系统配置</button>
-          <button @click="goToAdminData" class="btn btn-outline">数据管理</button>
+    <!-- 未登录：显示登录提示横幅 + 用户端首页内容 -->
+    <template v-if="!isLoggedIn">
+      <div class="login-prompt-banner">
+        <div class="login-prompt-content">
+          <span class="login-prompt-text">登录后可查看我的订单、在线预订及更多功能</span>
+          <button @click="goToLogin" class="login-prompt-btn">登录系统</button>
+          <router-link to="/register" class="login-prompt-register">注册账号</router-link>
         </div>
       </div>
-      <div class="features">
-        <div class="feature" @click="goToAdmin" style="cursor: pointer;">
-          <div class="feature-icon">⚙️</div>
-          <h3>系统配置</h3>
-          <p>酒店基础信息、客房资源管理</p>
-        </div>
-        <div class="feature" @click="goToAdminData" style="cursor: pointer;">
-          <div class="feature-icon">📊</div>
-          <h3>数据管理</h3>
-          <p>预订数据统计、服务日志管理</p>
-        </div>
-      </div>
-    </div>
 
-    <div v-else-if="isFront" class="front-home">
       <div class="hero">
-        <h2>前台服务中心</h2>
-        <p>客户咨询处理和客房状态管理</p>
-        <div class="buttons">
-          <button @click="goToFrontDesk" class="btn">前台服务</button>
-        </div>
-      </div>
-      <div class="features">
-        <div class="feature" @click="goToFrontDesk" style="cursor: pointer;">
-          <div class="feature-icon">💬</div>
-          <h3>服务咨询</h3>
-          <p>处理客户咨询和客房问题</p>
-        </div>
-        <div class="feature" @click="goToFrontDesk" style="cursor: pointer;">
-          <div class="feature-icon">🏠</div>
-          <h3>客房状态</h3>
-          <p>确认和更新客房状态</p>
-        </div>
-      </div>
-    </div>
-
-    <div v-else class="user-home">
-      <div v-if="hotelInfo" class="hotel-info">
-        <h2>{{ hotelInfo.name }}</h2>
-        <div class="hotel-details">
-          <div class="hotel-detail">
-            <span class="icon">📍</span>
-            <span>{{ hotelInfo.address }}</span>
-          </div>
-          <div class="hotel-detail">
-            <span class="icon">📞</span>
-            <span>{{ hotelInfo.phone }}</span>
-          </div>
-          <div class="hotel-detail">
-            <span class="icon">📧</span>
-            <span>{{ hotelInfo.email }}</span>
-          </div>
-        </div>
-        <p v-if="hotelInfo.description" class="hotel-description">{{ hotelInfo.description }}</p>
-      </div>
-      <div v-if="currentOrders.length > 0" class="current-order">
-        <h3>我的房间</h3>
-        <div class="orders-list">
-          <div v-for="order in currentOrders" :key="order.id" class="order-item">
-            <div class="order-info-item">
-              <span class="label">房间号:</span> {{ order.room?.roomNumber }}
-            </div>
-            <div class="order-info-item">
-              <span class="label">房型:</span> {{ order.room?.roomType?.name }}
-            </div>
-            <div class="order-info-item">
-              <span class="label">住房日期:</span> {{ formatDate(order.checkInTime) }} 至 {{ formatDate(order.checkOutTime) }}
-            </div>
-            <div class="order-info-item">
-              <span class="label">总价:</span> ¥{{ order.totalPrice }}
-            </div>
-            <div class="order-info-item">
-              <span class="label">状态:</span> 
-              <span v-if="isOrderExpired(order)" class="status-expired">房间已到期</span>
-              <span v-else-if="isOrderExpiringSoon(order)" class="status-expiring-soon">房间即将到期</span>
-              <span v-else :class="'status-' + (order.status === '待支付' || order.status === '已支付' ? '已预订' : order.status)">{{ order.status === '待支付' || order.status === '已支付' ? '已预订' : order.status }}</span>
-            </div>
-            <div v-if="order.status === '待支付'" class="order-info-item">
-              <span class="label">支付倒计时:</span> <span class="countdown" :class="{ 'countdown-expired': getCountdown(order.createTime) <= 0 }">{{ formatCountdown(getCountdown(order.createTime)) }}</span>
-            </div>
-            <div class="order-actions">
-              <button v-if="order.status === '待支付'" @click="goToPayment(order.id)" class="btn btn-pay">去支付</button>
-              <button v-if="order.status === '待支付'" @click="showCancelModal(order.id)" class="btn btn-cancel">取消订单</button>
-              <button v-else-if="isOrderExpired(order)" @click="showCheckOutModal(order.id)" class="btn btn-checkout">退房</button>
-              <button v-else @click="goToRooms" class="btn btn-room-detail">房间详情</button>
-              <button v-if="isOrderExpired(order) || isOrderExpiringSoon(order)" @click="goToRenew(order.id)" class="btn btn-renew">续订</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="hero">
-        <h2>欢迎使用酒店管理系统</h2>
+        <h2>欢迎光临翻斗花园酒店</h2>
         <p>为您提供便捷、高效的酒店预订和管理服务</p>
         <div class="buttons">
           <button @click="goToBooking" class="btn">去订房</button>
@@ -127,6 +38,201 @@
           <div class="feature-icon">📋</div>
           <h3>订单管理</h3>
           <p>方便的订单管理功能，随时查看和管理您的预订</p>
+        </div>
+      </div>
+    </template>
+
+    <!-- 已登录：根据角色显示仪表板 -->
+    <template v-else>
+      <!-- 管理员首页 -->
+      <div v-if="isAdmin" class="admin-home">
+        <div class="hero">
+          <h2>管理员中心</h2>
+          <p>系统配置管理和数据统计</p>
+          <div class="buttons">
+            <button @click="goToAdmin" class="btn">系统配置</button>
+            <button @click="goToAdminData" class="btn btn-outline">数据管理</button>
+          </div>
+        </div>
+        <div class="features">
+          <div class="feature" @click="goToAdmin" style="cursor: pointer;">
+            <div class="feature-icon">⚙️</div>
+            <h3>系统配置</h3>
+            <p>酒店基础信息、客房资源管理</p>
+          </div>
+          <div class="feature" @click="goToAdminData" style="cursor: pointer;">
+            <div class="feature-icon">📊</div>
+            <h3>数据管理</h3>
+            <p>预订数据统计、订单管理</p>
+          </div>
+          <div class="feature" @click="goToFinance" style="cursor: pointer;">
+            <div class="feature-icon">💰</div>
+            <h3>财务统计</h3>
+            <p>财务报表和营收数据分析</p>
+          </div>
+          <div class="feature" @click="goToServiceLogs" style="cursor: pointer;">
+            <div class="feature-icon">📋</div>
+            <h3>服务日志</h3>
+            <p>前台服务和用户评价管理</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 前台首页 -->
+      <div v-else-if="isFront" class="front-home">
+        <div class="hero">
+          <h2>前台服务中心</h2>
+          <p>客户咨询处理和客房状态管理</p>
+          <div class="buttons">
+            <button @click="goToFrontDesk" class="btn">前台服务</button>
+          </div>
+        </div>
+        <div class="features">
+          <div class="feature" @click="goToFrontDesk" style="cursor: pointer;">
+            <div class="feature-icon">💬</div>
+            <h3>服务咨询</h3>
+            <p>处理客户咨询和客房问题</p>
+          </div>
+          <div class="feature" @click="goToFrontDesk" style="cursor: pointer;">
+            <div class="feature-icon">🏠</div>
+            <h3>客房状态</h3>
+            <p>确认和更新客房状态</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 用户端首页 -->
+      <div v-else class="user-home">
+        <div class="hero">
+          <h2>欢迎光临翻斗花园酒店</h2>
+          <p>为您提供便捷、高效的酒店预订和管理服务</p>
+          <div class="buttons">
+            <button @click="goToBooking" class="btn">去订房</button>
+            <button @click="goToRooms" class="btn btn-outline">我的房间</button>
+          </div>
+        </div>
+        <div class="user-order-section">
+          <div v-if="currentOrders.length > 0" class="current-order">
+            <div class="current-order-header">
+              <h3>我的房间</h3>
+              <span class="order-count-badge">{{ currentOrders.length }}间</span>
+            </div>
+            <div class="orders-list">
+              <div v-for="order in currentOrders" :key="order.id"
+                class="order-item" :class="{ expanded: expandedOrders[order.id] }"
+                @click="toggleOrderExpand(order.id)">
+                <div class="order-summary">
+                  <div class="order-summary-left">
+                    <span class="order-room-number">{{ order.room?.roomNumber }}</span>
+                    <span class="order-status-tag" :class="'tag-' + getOrderStatusKey(order)">{{ getOrderStatusText(order) }}</span>
+                </div>
+                  <span class="expand-arrow" :class="{ rotated: expandedOrders[order.id] }">▼</span>
+                </div>
+              <transition name="slide-fade">
+                <div v-if="expandedOrders[order.id]" class="order-detail" @click.stop>
+                  <div class="order-detail-compact">
+                    <div class="order-detail-item">
+                      <span class="label">住房日期</span>
+                      <span class="order-date-range">{{ formatDate(order.checkInTime) }} 至 {{ formatDate(order.checkOutTime) }}</span>
+                    </div>
+                  </div>
+                  <div v-if="order.status === '待支付'" class="order-detail-item">
+                    <span class="label">支付倒计时</span>
+                    <span class="countdown" :class="{ 'countdown-expired': getCountdown(order.createTime) <= 0 }">{{ formatCountdown(getCountdown(order.createTime)) }}</span>
+                  </div>
+                  <div class="order-actions">
+                    <button v-if="order.status === '待支付'" @click="goToPayment(order.id)" class="btn btn-pay">去支付</button>
+                    <button v-if="order.status === '待支付'" @click="showCancelModal(order.id)" class="btn btn-cancel">取消订单</button>
+                    <button v-else-if="isOrderExpired(order)" @click="showCheckOutModal(order.id)" class="btn btn-checkout">退房</button>
+                    <button v-else @click="goToRooms" class="btn btn-room-detail">房间详情</button>
+                    <button v-if="isOrderExpired(order) || isOrderExpiringSoon(order)" @click="goToRenew(order.id)" class="btn btn-renew">续订</button>
+                  </div>
+                </div>
+              </transition>
+              </div>
+            </div>
+          </div>
+          <div class="order-decoration">
+          <svg viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="160" cy="100" r="130" fill="url(#deco-glow)" opacity="0.15" />
+            <defs>
+              <linearGradient id="deco-glow" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#2385BB" stop-opacity="0.4" />
+                <stop offset="100%" stop-color="#E6A23C" stop-opacity="0.1" />
+              </linearGradient>
+            </defs>
+            <rect x="84" y="58" width="152" height="120" rx="4" fill="#2385BB" fill-opacity="0.12" stroke="#2385BB" stroke-width="1.5" stroke-opacity="0.25" />
+            <rect x="80" y="54" width="160" height="6" rx="3" fill="#2385BB" fill-opacity="0.2" />
+            <rect x="96" y="72" width="18" height="22" rx="2" fill="#2385BB" fill-opacity="0.15" />
+            <rect x="122" y="72" width="18" height="22" rx="2" fill="#2385BB" fill-opacity="0.15" />
+            <rect x="148" y="72" width="18" height="22" rx="2" fill="#2385BB" fill-opacity="0.15" />
+            <rect x="174" y="72" width="18" height="22" rx="2" fill="#2385BB" fill-opacity="0.15" />
+            <rect x="200" y="72" width="18" height="22" rx="2" fill="#2385BB" fill-opacity="0.15" />
+            <rect x="122" y="72" width="18" height="22" rx="2" fill="#E6A23C" fill-opacity="0.4" />
+            <rect x="174" y="72" width="18" height="22" rx="2" fill="#E6A23C" fill-opacity="0.4" />
+            <rect x="96" y="104" width="18" height="22" rx="2" fill="#2385BB" fill-opacity="0.15" />
+            <rect x="122" y="104" width="18" height="22" rx="2" fill="#2385BB" fill-opacity="0.15" />
+            <rect x="148" y="104" width="18" height="22" rx="2" fill="#2385BB" fill-opacity="0.15" />
+            <rect x="174" y="104" width="18" height="22" rx="2" fill="#2385BB" fill-opacity="0.15" />
+            <rect x="200" y="104" width="18" height="22" rx="2" fill="#2385BB" fill-opacity="0.15" />
+            <rect x="148" y="104" width="18" height="22" rx="2" fill="#E6A23C" fill-opacity="0.4" />
+            <rect x="148" y="142" width="24" height="36" rx="8" fill="#2385BB" fill-opacity="0.18" stroke="#2385BB" stroke-width="1" stroke-opacity="0.3" />
+            <ellipse cx="60" cy="158" rx="18" ry="22" fill="#67C23A" fill-opacity="0.18" />
+            <rect x="57" y="158" width="6" height="20" rx="2" fill="#67C23A" fill-opacity="0.25" />
+            <ellipse cx="260" cy="155" rx="16" ry="20" fill="#67C23A" fill-opacity="0.15" />
+            <rect x="257" y="155" width="6" height="18" rx="2" fill="#67C23A" fill-opacity="0.22" />
+            <line x1="40" y1="178" x2="280" y2="178" stroke="#2385BB" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.15" />
+            <text x="40" y="40" font-size="8" fill="#E6A23C" opacity="0.3">✦</text>
+            <text x="72" y="28" font-size="6" fill="#E6A23C" opacity="0.2">✦</text>
+            <text x="260" y="38" font-size="7" fill="#E6A23C" opacity="0.25">✦</text>
+            <text x="290" y="50" font-size="5" fill="#E6A23C" opacity="0.2">✦</text>
+            <ellipse cx="270" cy="30" rx="28" ry="10" fill="#2385BB" fill-opacity="0.06" />
+            <ellipse cx="290" cy="28" rx="18" ry="8" fill="#2385BB" fill-opacity="0.04" />
+          </svg>
+        </div>
+      </div>
+        <div class="features-section-label">
+          <span>功能服务</span>
+        </div>
+        <div class="features">
+          <div class="feature" @click="goToBooking" style="cursor: pointer;">
+            <div class="feature-icon">📅</div>
+            <h3>在线预订</h3>
+            <p>便捷的在线预订系统，让您随时随地预订心仪的房间</p>
+          </div>
+          <div class="feature" @click="goToRoomStatus" style="cursor: pointer;">
+            <div class="feature-icon">🏨</div>
+            <h3>实时房态</h3>
+            <p>实时查看房间状态，确保您能预订到可用的房间</p>
+          </div>
+          <div class="feature" @click="goToFrontService" style="cursor: pointer;">
+            <div class="feature-icon">💬</div>
+            <h3>前台服务</h3>
+            <p>呼叫前台和问题反馈，及时解决您的需求</p>
+          </div>
+          <div class="feature" @click="goToProfile" style="cursor: pointer;">
+            <div class="feature-icon">📋</div>
+            <h3>订单管理</h3>
+            <p>方便的订单管理功能，随时查看和管理您的预订</p>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- 酒店信息 - 显示在页面底部 -->
+    <div v-if="hotelInfo && !isAdmin && !isFront" class="hotel-info">
+      <div class="hotel-details">
+        <div class="hotel-detail">
+          <span class="icon">📍</span>
+          <span>{{ hotelInfo.address }}</span>
+        </div>
+        <div class="hotel-detail">
+          <span class="icon">📞</span>
+          <span>{{ hotelInfo.phone }}</span>
+        </div>
+        <div class="hotel-detail">
+          <span class="icon">📧</span>
+          <span>{{ hotelInfo.email }}</span>
         </div>
       </div>
     </div>
@@ -171,10 +277,13 @@ export default {
       orders: [],
       refreshInterval: null,
       countdownTimer: null,
+      countdownNow: Date.now(),
       checkOutModalVisible: false,
       currentCheckOutOrderId: null,
       cancelModalVisible: false,
       currentCancelOrderId: null,
+      abortController: null,
+      isDestroyed: false,
       userInfo: {
         id: null,
         username: '',
@@ -182,7 +291,8 @@ export default {
         phone: '',
         email: '',
         idCard: ''
-      }
+      },
+      expandedOrders: {}
     }
   },
   computed: {
@@ -197,24 +307,41 @@ export default {
         .sort((a, b) => new Date(a.createTime) - new Date(b.createTime))
     }
   },
-  mounted() {
-    // 页面加载时初始化用户信息
+  created() {
+    // 组件渲染前初始化登录状态，避免白屏
     this.initUserInfo()
     this.checkUserRole()
-    this.getHotelInfo()
-    this.getOrders()
-    this.startAutoRefresh()
-    this.startCountdownTimer()
   },
-  beforeDestroy() {
+  mounted() {
+    // 页面加载时初始化用户信息（created 中已执行，此处确保二次加载）
+    this.getHotelInfo()
+    // 仅已登录用户才加载订单和启动定时器
+    if (this.isLoggedIn) {
+      this.getOrders()
+      this.startAutoRefresh()
+      this.startCountdownTimer()
+    }
+  },
+  beforeUnmount() {
+    this.isDestroyed = true
+    if (this.abortController) {
+      this.abortController.abort()
+      this.abortController = null
+    }
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval)
+      this.refreshInterval = null
     }
     if (this.countdownTimer) {
       clearInterval(this.countdownTimer)
+      this.countdownTimer = null
     }
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange)
   },
   methods: {
+    goToLogin() {
+      this.$router.push('/login/select')
+    },
     // 初始化用户信息 - 仅在页面加载时调用
     initUserInfo() {
       const userStr = sessionStorage.getItem('user')
@@ -236,39 +363,28 @@ export default {
       }
     },
     async getOrders() {
+      if (this.isDestroyed) return
       try {
-        // 使用内存中的用户信息，而不是直接从localStorage读取
         if (this.userInfo && this.userInfo.id) {
-          // 使用 fetch API 替代 axios
-          const response = await fetch('/api/user/orders?page=0&size=1000', {
+          if (this.abortController) {
+            this.abortController.abort()
+          }
+          this.abortController = new AbortController()
+          const response = await fetch(`/api/user/orders/user/${this.userInfo.id}/active?page=0&size=20`, {
             method: 'GET',
             credentials: 'include',
             headers: {
               'Content-Type': 'application/json'
-            }
+            },
+            signal: this.abortController.signal
           })
           const data = await response.json()
-          // 处理Page对象，取content中的数据
-          const ordersData = data.content || data
-          // 过滤出当前用户的订单
-          let userOrders = ordersData.filter(order => order.user?.id === this.userInfo.id)
-          
-          // 对订单进行去重，保留最新的订单
-          // 按房间 ID 和日期进行分组
-          const orderMap = new Map()
-          userOrders.forEach(order => {
-            // 生成唯一键：房间 ID + 入住时间 + 退房时间
-            const key = `${order.room?.id}-${order.checkInTime}-${order.checkOutTime}`
-            // 如果键不存在，或者当前订单的创建时间比已存在的订单晚，则更新
-            if (!orderMap.has(key) || new Date(order.createTime) > new Date(orderMap.get(key).createTime)) {
-              orderMap.set(key, order)
-            }
-          })
-          
-          // 将 Map 转换回数组
-          this.orders = Array.from(orderMap.values())
+          if (!this.isDestroyed) {
+            this.orders = data.content || data
+          }
         }
       } catch (error) {
+        if (error.name === 'AbortError') return
         console.error('获取订单失败:', error)
       }
     },
@@ -278,18 +394,27 @@ export default {
       return date.toLocaleDateString('zh-CN')
     },
     startAutoRefresh() {
-      this.refreshInterval = setInterval(() => {
-        // 只有当页面可见时才刷新
-        if (document.visibilityState === 'visible') {
+      const checkAndRefresh = () => {
+        if (this.isDestroyed) {
+          clearInterval(this.refreshInterval)
+          return
+        }
+        if (document.visibilityState === 'visible' && this.orders.length > 0) {
           this.getOrders()
         }
-      }, 60000) // 60秒刷新一次
+      }
+      setTimeout(checkAndRefresh, 30000)
+      this.refreshInterval = setInterval(checkAndRefresh, 60000)
     },
     async getHotelInfo() {
+      if (this.isDestroyed) return
       try {
         const response = await axios.get('/api/user/hotel-info', { withCredentials: true })
-        this.hotelInfo = response.data
+        if (!this.isDestroyed) {
+          this.hotelInfo = response.data
+        }
       } catch (error) {
+        if (axios.isCancel(error)) return
         console.error('获取酒店信息失败:', error)
       }
     },
@@ -344,6 +469,12 @@ export default {
     goToAdminData() {
       this.$router.push('/admin')
     },
+    goToFinance() {
+      this.$router.push('/admin/finance')
+    },
+    goToServiceLogs() {
+      this.$router.push('/admin/logs')
+    },
     goToFrontDesk() {
       this.$router.push('/front-desk')
     },
@@ -352,10 +483,9 @@ export default {
       this.$router.push(`/booking?orderId=${orderId}&pay=true`)
     },
     getCountdown(createTime) {
-      // 计算15分钟倒计时
+      // 计算15分钟倒计时 - 使用响应式的 countdownNow 驱动实时更新
       const createDate = new Date(createTime)
-      const now = new Date()
-      const diff = createDate.getTime() + 15 * 60 * 1000 - now.getTime()
+      const diff = createDate.getTime() + 15 * 60 * 1000 - this.countdownNow
       return Math.max(0, Math.floor(diff / 1000))
     },
     formatCountdown(seconds) {
@@ -364,20 +494,26 @@ export default {
       return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
     },
     startCountdownTimer() {
-      // 启动倒计时定时器，每5秒钟检查一次
       this.countdownTimer = setInterval(() => {
-        // 检查所有待支付订单的倒计时
+        if (this.isDestroyed) {
+          clearInterval(this.countdownTimer)
+          return
+        }
+        this.countdownNow = Date.now()
         this.orders.forEach(order => {
           if (order.status === '待支付' && this.getCountdown(order.createTime) <= 0) {
-            // 倒计时结束，自动取消订单
             this.cancelOrder(order.id)
           }
         })
-        // 只有当页面可见时才刷新订单列表
-        if (document.visibilityState === 'visible') {
-          this.getOrders()
-        }
-      }, 5000) // 每5秒钟检查一次
+      }, 1000)
+      document.addEventListener('visibilitychange', this.handleVisibilityChange)
+    },
+    handleVisibilityChange() {
+      if (this.isDestroyed) return
+      if (document.visibilityState === 'visible') {
+        this.countdownNow = Date.now()
+        this.getOrders()
+      }
     },
     showCancelModal(orderId) {
       this.currentCancelOrderId = orderId
@@ -452,6 +588,25 @@ export default {
     },
     goToRenew(orderId) {
       this.$router.push(`/booking?orderId=${orderId}&renew=true`)
+    },
+    toggleOrderExpand(orderId) {
+      this.expandedOrders = {
+        ...this.expandedOrders,
+        [orderId]: !this.expandedOrders[orderId]
+      }
+    },
+    getOrderStatusKey(order) {
+      if (this.isOrderExpired(order)) return 'expired'
+      if (this.isOrderExpiringSoon(order)) return 'expiring'
+      if (order.status === '待支付' || order.status === '已支付') return 'reserved'
+      return order.status
+    },
+    getOrderStatusText(order) {
+      if (this.isOrderExpired(order)) return '房间已到期'
+      if (this.isOrderExpiringSoon(order)) return '即将到期'
+      if (order.status === '待支付') return '待支付'
+      if (order.status === '已支付') return '已预订'
+      return order.status
     }
   }
 }
@@ -459,24 +614,57 @@ export default {
 
 <style scoped>
 .home {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
 .hotel-info {
-  background-color: var(--bg-white);
-  padding: 2rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, #f0f7fd 0%, #f8fafc 100%);
+  padding: 2.5rem 2rem;
+  border-radius: var(--radius-lg);
+  margin-top: 3rem;
+  margin-bottom: 0;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  position: relative;
+  overflow: hidden;
+}
+
+.hotel-info::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(35,133,187,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hotel-info::after {
+  content: '';
+  position: absolute;
+  bottom: -60px;
+  left: -60px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230,162,60,0.05) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .hotel-info h2 {
   text-align: center;
-  margin-bottom: 1.5rem;
-  color: var(--text-primary);
+  margin-bottom: 1.2rem;
   font-size: 2rem;
+  font-weight: 700;
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+  z-index: 1;
 }
 
 .hotel-details {
@@ -508,114 +696,287 @@ export default {
 }
 
 .current-order {
-  background-color: var(--bg-white);
-  padding: 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, #fafcfd 0%, #f5f9fc 100%);
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  position: relative;
+  overflow: hidden;
+  flex: none;
+  width: 420px;
+}
+
+.user-order-section {
+  display: flex;
+  align-items: stretch;
+  gap: 1.5rem;
+  margin-bottom: 1.2rem;
+}
+
+.order-decoration {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #f5f9fc 50%, #fdf8f0 100%);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+  min-height: 140px;
+  position: relative;
+}
+
+.order-decoration svg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+}
+
+.current-order::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  left: -60px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(35,133,187,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.current-order-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  position: relative;
+  z-index: 1;
+}
+
+.order-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  padding: 0.1rem 0.5rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 12px;
+  line-height: 1.4;
+  flex-shrink: 0;
 }
 
 .current-order h3 {
-  margin-bottom: 1rem;
-  color: var(--text-primary);
-  font-size: 1.3rem;
-  border-bottom: 2px solid var(--primary-color);
-  padding-bottom: 0.5rem;
-}
-
-.current-order-info {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.current-order-info p {
   margin: 0;
-  color: var(--text-secondary);
-  font-size: 1rem;
-}
-
-.current-order-info .label {
-  font-weight: 500;
   color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
 }
 
 .orders-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.35rem;
 }
 
 .order-item {
-  background-color: var(--bg-light);
-  padding: 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+}
+
+.order-item:hover {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.order-item.expanded {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-sm);
+  background: var(--bg-white);
+}
+
+.order-summary {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  padding: 0.4rem 0.7rem;
+  min-height: 32px;
 }
 
-.order-info-item {
+.order-summary-left {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.5rem;
+}
+
+.order-room-number {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+}
+
+.order-status-tag {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
   white-space: nowrap;
 }
 
-.order-info-item .label {
+.tag-已预订, .tag-reserved {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+}
+
+.tag-已入住 {
+  background: var(--status-success-bg);
+  color: var(--status-success);
+}
+
+.tag-待支付 {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+}
+
+.tag-expiring {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+}
+
+.tag-expired {
+  background: var(--status-danger-bg);
+  color: var(--status-danger);
+}
+
+.tag-已完成 {
+  background: var(--status-success-bg);
+  color: var(--status-success);
+}
+
+.expand-arrow {
+  font-size: 0.6rem;
+  color: var(--text-light);
+  transition: transform var(--transition);
+  flex-shrink: 0;
+}
+
+.expand-arrow.rotated {
+  transform: rotate(180deg);
+  color: var(--primary-color);
+}
+
+.order-detail {
+  padding: 0 0.7rem 0.7rem;
+  border-top: 1px solid var(--border-light);
+  margin-top: 0;
+  padding-top: 0.6rem;
+}
+
+.order-detail-compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0;
+}
+
+.order-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.order-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.order-detail-item .label {
+  font-size: 0.7rem;
   font-weight: 500;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.order-detail-item span:not(.label) {
+  font-size: 0.82rem;
   color: var(--text-primary);
-}
-
-.status-已预订 {
-  color: var(--status-info);
   font-weight: 500;
 }
 
-.status-已入住 {
-  color: var(--status-info);
-  font-weight: 500;
+.order-price {
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: var(--primary-color) !important;
 }
 
-.status-已完成 {
-  color: var(--status-success);
-  font-weight: 500;
+.order-date-range {
+  font-size: 0.85rem !important;
+  color: var(--primary-color) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.3px;
 }
 
-.status-已取消 {
+.order-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.slide-fade-enter-active {
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out, max-height 0.25s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: opacity 0.2s ease-in, transform 0.2s ease-in, max-height 0.2s ease-in;
+}
+
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-8px);
+  max-height: 0;
+}
+
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+  max-height: 0;
+}
+
+.slide-fade-enter-to,
+.slide-fade-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 300px;
+}
+
+.countdown-expired {
   color: var(--status-danger);
-  font-weight: 500;
-}
-
-.status-待支付 {
-  color: var(--status-warning);
-  font-weight: 500;
-}
-
-.status-已支付 {
-  color: var(--status-success);
-  font-weight: 500;
-}
-
-.status-expired {
-  color: var(--status-danger);
-  font-weight: 500;
-}
-
-.status-expiring-soon {
-  color: var(--status-warning);
   font-weight: 500;
 }
 
 .btn-checkout {
   background-color: var(--status-danger);
   color: var(--text-white);
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
   line-height: 1.2;
   border: none;
   border-radius: 4px;
@@ -632,8 +993,8 @@ export default {
 .btn-renew {
   background-color: var(--primary-color);
   color: var(--text-white);
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
   line-height: 1.2;
   margin-left: 0.5rem;
   border: none;
@@ -651,8 +1012,8 @@ export default {
 .btn-pay {
   background-color: var(--status-warning);
   color: var(--text-white);
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
   line-height: 1.2;
   border: none;
   border-radius: 4px;
@@ -676,18 +1037,11 @@ export default {
   font-weight: 500;
 }
 
-.order-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-left: 1rem;
-  flex-shrink: 0;
-}
-
 .btn-room-detail {
   background-color: var(--primary-color);
   color: var(--text-white);
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
   line-height: 1.2;
   border: none;
   border-radius: 4px;
@@ -704,8 +1058,8 @@ export default {
 .btn-cancel {
   background-color: var(--status-danger);
   color: var(--text-white);
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
   line-height: 1.2;
   margin-right: 0.5rem;
   border: none;
@@ -739,97 +1093,281 @@ export default {
   box-shadow: var(--shadow-sm);
 }
 
-.hero {
-  text-align: center;
-  padding: 4rem 0;
-  background-color: var(--bg-white);
-  border-radius: 8px;
+/* ======= 未登录提示横幅 ======= */
+.login-prompt-banner {
+  background: linear-gradient(135deg, #e8f4fa 0%, #f0f7fd 100%);
+  border: 1px solid #c5e2f2;
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.5rem;
   margin-bottom: 2rem;
-  border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
 }
 
+.login-prompt-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.login-prompt-text {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.login-prompt-btn {
+  padding: 0.5rem 1.5rem;
+  background: var(--primary-gradient);
+  color: var(--text-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.25);
+  text-decoration: none;
+}
+
+.login-prompt-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(35, 133, 187, 0.35);
+}
+
+.login-prompt-register {
+  color: var(--primary-color);
+  font-size: 0.9rem;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+}
+
+.login-prompt-register:hover {
+  background: rgba(35, 133, 187, 0.08);
+}
+
+/* ======= 管理员端专属样式 ======= */
+.admin-home .features .feature:nth-child(1) .feature-icon {
+  background: linear-gradient(135deg, #e8f4fa 0%, #c5e2f2 100%);
+}
+.admin-home .features .feature:nth-child(1):hover .feature-icon {
+  background: var(--primary-gradient);
+}
+
+.admin-home .features .feature:nth-child(2) .feature-icon {
+  background: linear-gradient(135deg, #f0e8fa 0%, #e0d0f5 100%);
+}
+.admin-home .features .feature:nth-child(2):hover .feature-icon {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+}
+
+.admin-home .features .feature:nth-child(3) .feature-icon {
+  background: linear-gradient(135deg, #fdf6ec 0%, #f5e6c8 100%);
+}
+.admin-home .features .feature:nth-child(3):hover .feature-icon {
+  background: linear-gradient(135deg, #e6a23c 0%, #cf9236 100%);
+}
+
+.admin-home .features .feature:nth-child(4) .feature-icon {
+  background: linear-gradient(135deg, #ecfdf3 0%, #c8f0d8 100%);
+}
+.admin-home .features .feature:nth-child(4):hover .feature-icon {
+  background: linear-gradient(135deg, #67c23a 0%, #5daf34 100%);
+}
+
+/* ======= 前台端专属样式 ======= */
+.front-home .features .feature .feature-icon {
+  background: linear-gradient(135deg, #e8f4fa 0%, #d4eaf5 100%);
+}
+
+.hero {
+  text-align: center;
+  padding: 5rem 2rem;
+  background: linear-gradient(135deg, #e8f4fa 0%, #f8fafc 50%, #fdf6ec 100%);
+  border-radius: var(--radius-xl);
+  margin-bottom: 2.5rem;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(35,133,187,0.07) 0%, transparent 70%);
+  top: -100px;
+  right: -80px;
+  pointer-events: none;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230,162,60,0.06) 0%, transparent 70%);
+  bottom: -100px;
+  left: -80px;
+  pointer-events: none;
+}
+
 .hero h2 {
-  font-size: 2.5rem;
+  font-size: 2.4rem;
   margin-bottom: 1rem;
-  color: var(--text-primary);
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .hero p {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   margin-bottom: 2rem;
   color: var(--text-secondary);
+  position: relative;
+  z-index: 1;
 }
 
 .buttons {
   display: flex;
   justify-content: center;
-  gap: 1rem;
-}
-
-.btn {
-  padding: 0.8rem 1.5rem;
-  background-color: var(--primary-color);
-  color: var(--text-white);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 1rem;
-}
-
-.btn:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 
 .btn-outline {
-  background-color: transparent;
-  border: 1px solid var(--primary-color);
-  color: var(--primary-color);
+  background-color: transparent !important;
+  border: 2px solid var(--primary-color) !important;
+  color: var(--primary-color) !important;
 }
 
 .btn-outline:hover {
-  background-color: var(--primary-color);
-  color: var(--text-white);
+  background-color: var(--primary-color) !important;
+  color: var(--text-white) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(35, 133, 187, 0.3);
 }
 
 .features {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.8rem;
+}
+
+.features-section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  margin-top: 0.5rem;
+  position: relative;
+}
+
+.features-section-label::before,
+.features-section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-color, #e0e8f0), transparent);
+}
+
+.features-section-label span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-light);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0 0.5rem;
 }
 
 .feature {
-  padding: 2rem;
-  background-color: var(--bg-white);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+  padding: 2.5rem 1.5rem 2rem;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
   text-align: center;
-  transition: all 0.3s ease;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.feature::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary-gradient);
+  transform: scaleX(0);
+  transition: transform var(--transition);
 }
 
 .feature:hover {
-  border-color: var(--primary-color);
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-md);
+  border-color: var(--primary-light);
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+  background: var(--card-hover-gradient);
+}
+
+.feature:hover::before {
+  transform: scaleX(1);
 }
 
 .feature-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin: 0 auto 1.2rem;
+  background: linear-gradient(135deg, #e8f4fa 0%, #d4eaf5 100%);
+  box-shadow: 0 4px 12px rgba(35,133,187,0.1);
+  transition: all var(--transition);
+  position: relative;
+  z-index: 1;
+}
+
+.feature:hover .feature-icon {
+  background: var(--primary-gradient);
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(35,133,187,0.25);
 }
 
 .feature h3 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
+  font-size: 1.3rem;
+  margin-bottom: 0.6rem;
   color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
 }
 
 .feature p {
-  color: var(--text-secondary);
+  color: var(--text-light);
   margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
 }
 
 .modal-overlay {
@@ -838,21 +1376,23 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: fadeIn var(--transition-fast);
 }
 
 .modal-content {
-  background-color: var(--bg-white);
-  padding: 2rem;
-  border-radius: 8px;
+  background: var(--bg-white);
+  padding: 2.5rem;
+  border-radius: var(--radius-lg);
   width: 90%;
   max-width: 400px;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-xl);
+  animation: scaleIn var(--transition);
 }
 
 .modal-content h3 {
@@ -860,6 +1400,7 @@ export default {
   margin-bottom: 1.5rem;
   color: var(--text-primary);
   text-align: center;
+  font-weight: 600;
 }
 
 .modal-content p {
@@ -875,10 +1416,7 @@ export default {
 }
 
 .btn-confirm {
-  background-color: var(--primary-color);
-}
-
-.btn-confirm:hover {
-  background-color: var(--primary-hover);
+  background: var(--primary-gradient) !important;
+  color: var(--text-white) !important;
 }
 </style>

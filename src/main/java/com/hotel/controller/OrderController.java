@@ -1,5 +1,7 @@
 package com.hotel.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,19 +19,51 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Calendar;
 
 @RestController
 @RequestMapping("/api/user")
 public class OrderController {
 
+    private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
+
     @Autowired
     private OrderRepository orderRepository;
-
+    
     @Autowired
     private RoomRepository roomRepository;
-
+    
     @Autowired
     private RoomStatusService roomStatusService;
+
+    // 清理过期的待支付订单（15分钟未支付自动取消）
+    private void cleanupExpiredPendingOrders() {
+        List<Order> pendingOrders = orderRepository.findByStatus("待支付");
+        Date now = new Date();
+        int cleaned = 0;
+        for (Order order : pendingOrders) {
+            if (order.getCreateTime() != null) {
+                Calendar deadline = Calendar.getInstance();
+                deadline.setTime(order.getCreateTime());
+                deadline.add(Calendar.MINUTE, 15);
+                if (now.after(deadline.getTime())) {
+                    order.setStatus("已取消");
+                    orderRepository.save(order);
+                    
+                    Room room = order.getRoom();
+                    if (room != null) {
+                        room.setStatus("空房");
+                        roomRepository.save(room);
+                    }
+                    cleaned++;
+                    logger.info("[自动取消] 订单 {} 待支付超时，已自动取消", order.getOrderNumber());
+                }
+            }
+        }
+        if (cleaned > 0) {
+            logger.info("[自动取消] 本次清理了 {} 个过期待支付订单", cleaned);
+        }
+    }
 
     // 获取所有订单（支持分页）
     @GetMapping("/orders")
@@ -49,23 +83,40 @@ public class OrderController {
         Pageable pageable = PageRequest.of(page, size);
         return orderRepository.findByUserId(userId, pageable);
     }
+    
+    // 按用户ID分页查询活跃订单（仅显示活跃的订单）
+    @GetMapping("/orders/user/{userId}/active")
+    public Page<Order> getActiveOrdersByUserId(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return orderRepository.findActiveOrdersByUserId(userId, pageable);
+    }
 
     // 客户创建订单
     @PostMapping("/orders")
     public Order createOrder(@RequestBody Order order) {
+        logger.info("[订单创建] 收到创建订单请求，订单数据: {}", order);
+        
         // 验证房间是否存在
         if (order.getRoom() == null || order.getRoom().getId() == null) {
+            logger.warn("[订单创建] 请求参数错误 - 未选择房间");
             throw new RuntimeException("请选择房间");
         }
         
         Room room = roomRepository.findById(order.getRoom().getId()).orElse(null);
         if (room == null) {
+            logger.warn("[订单创建] 请求参数错误 - 房间不存在，ID: {}", order.getRoom().getId());
             throw new RuntimeException("房间不存在");
         }
+        
+        logger.info("[订单创建] 正在验证房间，房间号: {}, 当前状态: {}", room.getRoomNumber(), room.getStatus());
         
         // 检查房间状态是否为空房、已入住或已预订（支持续订）
         String status = room.getStatus();
         if (!"空房".equals(status) && !"已入住".equals(status) && !"已预订".equals(status)) {
+            logger.warn("[订单创建] 房间不可用，房间号: {}, 状态: {}", room.getRoomNumber(), room.getStatus());
             throw new RuntimeException("该房间当前不可用，请选择其他房间");
         }
         
@@ -77,14 +128,23 @@ public class OrderController {
         order.setCreateTime(new Date());
         
         // 检查是否应该自动入住
+        String finalStatus;
         if (order.getCheckInTime() != null && roomStatusService.shouldAutoCheckIn(order.getCheckInTime())) {
             order.setStatus("已入住");
+            finalStatus = "已入住";
         } else {
             order.setStatus("已预订");
+            finalStatus = "已预订";
         }
+        
+        logger.info("[订单创建] 准备保存订单 - 订单号: {}, 状态: {}, 金额: {}, 房间号: {}", 
+                   orderNumber, finalStatus, order.getTotalPrice(), room.getRoomNumber());
         
         Order savedOrder = orderRepository.save(order);
         roomStatusService.updateRoomStatusByOrder(savedOrder);
+        
+        logger.info("[订单创建] 订单创建成功！订单ID: {}, 订单号: {}, 状态: {}", 
+                   savedOrder.getId(), orderNumber, finalStatus);
         
         return savedOrder;
     }

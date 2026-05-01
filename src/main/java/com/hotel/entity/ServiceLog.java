@@ -16,6 +16,17 @@ public class ServiceLog {
     private String content;
     private String status;
     
+    // 评分（1-5）
+    private Integer rating;
+    
+    // 评价内容
+    @Column(length = 500)
+    private String review;
+    
+    // 评价图片URL列表（JSON数组字符串）
+    @Column(length = 2000)
+    private String images;
+    
     @Temporal(TemporalType.TIMESTAMP)
     private Date createTime;
     

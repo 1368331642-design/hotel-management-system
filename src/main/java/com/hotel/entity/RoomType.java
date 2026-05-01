@@ -2,12 +2,14 @@ package com.hotel.entity;
 
 import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javax.persistence.*;
 import java.util.List;
 
 @Data
 @Entity
 @Table(name = "room_type")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class RoomType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

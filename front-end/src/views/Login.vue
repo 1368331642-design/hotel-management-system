@@ -1,7 +1,6 @@
 <template>
   <div class="login">
     <div v-if="!showLoginForm" class="login-type-select">
-      <h2>请选择登录方式</h2>
       <div class="login-types">
         <div class="login-type-card" @click="selectLoginType('admin')">
           <div class="icon">👨‍💼</div>
@@ -87,18 +86,22 @@ export default {
           console.log('用户信息:', user)
           console.log('用户角色:', user.roles)
           
-          sessionStorage.setItem('user', JSON.stringify(user))
+          const frontRedirect = this.selectedLoginType === 'front'
           
-          if (this.selectedLoginType === 'admin') {
-            console.log('跳转到管理员页面')
-            this.$router.push('/admin')
-          } else if (this.selectedLoginType === 'front') {
-            console.log('跳转到前台页面')
-            this.$router.push('/front-desk')
-          } else {
-            console.log('跳转到首页')
-            this.$router.push('/')
+          sessionStorage.setItem('user', JSON.stringify(user))
+          this.resetFormState()
+          
+          let targetRoute = '/'
+          if (frontRedirect) {
+            targetRoute = '/front-desk'
           }
+          console.log('跳转到:', targetRoute)
+          
+          this.$router.push(targetRoute).catch(err => {
+            if (err.name !== 'NavigationDuplicated') {
+              console.error('路由跳转异常:', err)
+            }
+          })
         } else {
           alert('登录失败: ' + (response.data?.message || '未知错误'))
         }
@@ -107,16 +110,35 @@ export default {
         console.error('错误响应:', error.response)
         alert('登录失败，请检查用户名和密码')
       }
+    },
+    resetFormState() {
+      this.showLoginForm = false
+      this.selectedLoginType = ''
+      this.form = {
+        username: '',
+        password: ''
+      }
     }
+  },
+  deactivated() {
+    this.resetFormState()
   }
 }
 </script>
 
 <style scoped>
 .login {
-  max-width: 800px;
+  min-height: 85vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 900px;
   margin: 0 auto;
   padding: 2rem;
+}
+
+.login-type-select {
+  width: 100%;
 }
 
 .login-type-select h2 {
@@ -133,66 +155,107 @@ export default {
 
 .login-type-card {
   padding: 2.5rem 2rem;
-  background-color: var(--bg-white);
-  border-radius: 12px;
+  background: var(--bg-white);
+  border-radius: var(--radius-xl);
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: 2px solid var(--border-color);
+  transition: all var(--transition);
+  border: 2px solid var(--border-light);
   box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-type-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary-gradient);
+  transform: scaleX(0);
+  transition: transform var(--transition);
 }
 
 .login-type-card:hover {
   transform: translateY(-8px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-color);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-light);
+}
+
+.login-type-card:hover::before {
+  transform: scaleX(1);
+}
+
+.login-type-card:active {
+  transform: translateY(-4px);
 }
 
 .login-type-card .icon {
-  font-size: 4rem;
+  font-size: 3.5rem;
   margin-bottom: 1rem;
+  display: inline-block;
 }
 
 .login-type-card h3 {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   margin-bottom: 0.5rem;
   color: var(--text-primary);
+  font-weight: 600;
 }
 
 .login-type-card p {
-  color: var(--text-secondary);
+  color: var(--text-light);
   margin: 0;
+  font-size: 0.9rem;
 }
 
 .login-form {
-  max-width: 400px;
+  max-width: 420px;
   margin: 0 auto;
-  padding: 2rem;
-  background-color: var(--bg-white);
-  border-radius: 8px;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
+  padding: 2.5rem;
+  background: var(--bg-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border-light);
+  animation: scaleIn var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-form::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary-gradient);
 }
 
 .back-btn {
   background: none;
   border: none;
-  color: var(--text-secondary);
+  color: var(--text-light);
   cursor: pointer;
-  font-size: 1rem;
-  padding: 0.5rem 0;
+  font-size: 0.95rem;
+  padding: 0.4rem 0;
   margin-bottom: 1rem;
-  transition: color 0.3s ease;
+  transition: all var(--transition-fast);
 }
 
 .back-btn:hover {
   color: var(--primary-color);
+  transform: translateX(-2px);
 }
 
 .login-form h2 {
   text-align: center;
   margin-bottom: 2rem;
   color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.3rem;
 }
 
 .form-group {
@@ -203,51 +266,62 @@ export default {
   display: block;
   margin-bottom: 0.5rem;
   color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .form-group input {
   width: 100%;
-  padding: 0.8rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
   font-size: 1rem;
-  transition: border-color 0.3s ease;
+  transition: all var(--transition);
+  background: var(--bg-light);
+}
+
+.form-group input:hover {
+  border-color: var(--text-light);
 }
 
 .form-group input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(35, 133, 187, 0.2);
+  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
+  background: var(--bg-white);
 }
 
 .btn {
   width: 100%;
-  padding: 0.8rem;
-  background-color: var(--primary-color);
+  padding: 0.85rem;
+  background: var(--primary-gradient);
   color: var(--text-white);
   border: none;
-  border-radius: 4px;
-  font-size: 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 1.05rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition);
+  box-shadow: 0 4px 16px rgba(35, 133, 187, 0.25);
 }
 
 .btn:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(35, 133, 187, 0.4);
 }
 
 .register-link {
   text-align: center;
-  margin-top: 1rem;
-  color: var(--text-secondary);
+  margin-top: 1.2rem;
+  color: var(--text-light);
+  font-size: 0.9rem;
 }
 
 .register-link a {
   color: var(--primary-color);
   text-decoration: none;
-  transition: color 0.3s ease;
+  font-weight: 500;
+  transition: color var(--transition-fast);
 }
 
 .register-link a:hover {

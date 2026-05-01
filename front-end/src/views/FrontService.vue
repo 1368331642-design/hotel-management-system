@@ -1,8 +1,7 @@
 <template>
   <div class="front-service">
-    <h2>前台服务</h2>
-    
-    <div class="service-tabs">
+    <h2 class="page-title">前台服务</h2>
+    <div class="tab-buttons">
       <button @click="activeTab = 'service'" :class="{ active: activeTab === 'service' }">呼叫/反馈</button>
       <button @click="activeTab = 'history'" :class="{ active: activeTab === 'history' }">呼叫/反馈记录</button>
     </div>
@@ -36,36 +35,96 @@
         <div v-for="log in myServiceLogs" :key="log.id" class="history-item">
           <div class="history-header">
             <h4>{{ log.type }}</h4>
-            <span :class="['status-badge', log.status === '待处理' ? 'status-pending' : 'status-processed']">
+            <span class="status-badge" :class="log.status === '待处理' ? 'status-warning' : 'status-success'">
               {{ log.status }}
             </span>
           </div>
           <p class="history-content">{{ log.content }}</p>
           <p class="history-time">时间: {{ formatDate(log.createTime) }}</p>
+          
+          <!-- 评价展示区 -->
+          <div v-if="log.rating" class="review-display">
+            <div class="rating-stars">
+              <span v-for="i in 5" :key="i" class="star" :class="{ filled: i <= log.rating }">★</span>
+              <span class="rating-text">{{ log.rating }} 分</span>
+            </div>
+            <p v-if="log.review" class="review-content">{{ log.review }}</p>
+          </div>
+          
+          <!-- 评价按钮 - 仅在已处理且未评价时显示 -->
+          <div v-if="log.status === '已处理' && !log.rating" class="review-section">
+            <button @click="openReviewModal(log)" class="btn btn-review">评价服务</button>
+          </div>
         </div>
       </div>
     </div>
     
-    <!-- 呼叫前台表单 -->
-    <div v-if="showCallForm" class="form-modal">
-      <div class="form-content">
+    <!-- 评价表单弹窗 -->
+    <div v-if="showReviewModal" class="modal-overlay">
+      <div class="modal-content review-form-content">
+        <h3>评价服务</h3>
+        
+        <div class="rating-section">
+          <label class="rating-label">请选择评分</label>
+          <div class="star-rating" @mouseleave="hoverRating = 0">
+            <span 
+              v-for="i in 5" 
+              :key="i" 
+              class="star"
+              :class="{ 
+                filled: (hoverRating || reviewForm.rating) >= i,
+                hover: hoverRating === i 
+              }"
+              @mouseenter="hoverRating = i"
+              @click="reviewForm.rating = i"
+            >★</span>
+          </div>
+          <p v-if="!reviewForm.rating && showRatingError" class="error-text">请选择评分</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="reviewContent">评价内容 (选填，最多500字)</label>
+          <textarea 
+            id="reviewContent" 
+            v-model="reviewForm.content" 
+            maxlength="500"
+            placeholder="请写下您的评价..."
+          ></textarea>
+          <div class="char-counter">{{ reviewForm.content.length }}/500</div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" @click="closeReviewModal" class="btn btn-ghost">取消</button>
+          <button 
+            type="button" 
+            @click="submitReview" 
+            class="btn btn-confirm"
+            :disabled="submitting"
+          >
+            {{ submitting ? '提交中...' : '提交评价' }}
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div v-if="showCallForm" class="modal-overlay">
+      <div class="modal-content">
         <h3>呼叫前台</h3>
         <form @submit.prevent="submitCall">
           <div class="form-group">
             <label for="callContent">呼叫内容</label>
             <textarea id="callContent" v-model="callForm.content" required></textarea>
           </div>
-          <div class="form-actions">
-            <button type="button" @click="showCallForm = false" class="btn btn-secondary">取消</button>
-            <button type="submit" class="btn">提交</button>
+          <div class="modal-actions">
+            <button type="button" @click="showCallForm = false" class="btn btn-ghost">取消</button>
+            <button type="submit" class="btn btn-confirm">提交</button>
           </div>
         </form>
       </div>
     </div>
     
-    <!-- 问题反馈表单 -->
-    <div v-if="showFeedbackForm" class="form-modal">
-      <div class="form-content">
+    <div v-if="showFeedbackForm" class="modal-overlay">
+      <div class="modal-content">
         <h3>问题反馈</h3>
         <form @submit.prevent="submitFeedback">
           <div class="form-group">
@@ -80,9 +139,9 @@
             <label for="feedbackContent">反馈内容</label>
             <textarea id="feedbackContent" v-model="feedbackForm.content" required></textarea>
           </div>
-          <div class="form-actions">
-            <button type="button" @click="showFeedbackForm = false" class="btn btn-secondary">取消</button>
-            <button type="submit" class="btn">提交</button>
+          <div class="modal-actions">
+            <button type="button" @click="showFeedbackForm = false" class="btn btn-ghost">取消</button>
+            <button type="submit" class="btn btn-confirm">提交</button>
           </div>
         </form>
       </div>
@@ -106,7 +165,18 @@ export default {
         content: ''
       },
       serviceLogs: [],
-      loading: false
+      loading: false,
+      showReviewModal: false,
+      currentReviewLog: null,
+      reviewForm: {
+        rating: 0,
+        content: ''
+      },
+      hoverRating: 0,
+      submitting: false,
+      showRatingError: false,
+      abortController: null,
+      isDestroyed: false
     }
   },
   computed: {
@@ -120,46 +190,57 @@ export default {
       }
       const user = JSON.parse(userStr)
       return this.serviceLogs
-        .filter(log => log.user?.id === user.id)
+        .filter(log => log.user?.id === user.id && log.type !== '订单评价')
         .sort((a, b) => new Date(b.createTime) - new Date(a.createTime))
     }
   },
   mounted() {
     this.getServiceLogs()
   },
+  beforeUnmount() {
+    this.isDestroyed = true
+    if (this.abortController) {
+      this.abortController.abort()
+      this.abortController = null
+    }
+  },
   methods: {
     async getServiceLogs() {
+      if (this.isDestroyed) return
       this.loading = true
-      console.log('开始获取服务日志...')
       try {
-        const response = await fetch('/api/admin/service-logs?page=0&size=1000', {
+        if (this.abortController) {
+          this.abortController.abort()
+        }
+        this.abortController = new AbortController()
+        const response = await fetch('/api/admin/service-logs?page=0&size=100', {
           method: 'GET',
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json'
-          }
+          },
+          signal: this.abortController.signal
         })
-        console.log('服务日志响应状态:', response.status)
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
         const data = await response.json()
-        console.log('服务日志响应数据:', data)
-        this.serviceLogs = data.content || data
+        if (!this.isDestroyed) {
+          this.serviceLogs = data.content || data
+        }
       } catch (error) {
+        if (error.name === 'AbortError') return
         console.error('获取服务日志失败:', error)
       } finally {
-        this.loading = false
+        if (!this.isDestroyed) {
+          this.loading = false
+        }
       }
     },
     async submitCall() {
+      if (this.isDestroyed) return
       try {
-        // 获取当前用户信息
         const user = JSON.parse(sessionStorage.getItem('user'))
-        
-        console.log('提交呼叫前台，用户信息:', user)
-        
-        // 使用 fetch API 提交呼叫前台请求
         const response = await fetch('/api/admin/service-logs', {
           method: 'POST',
           credentials: 'include',
@@ -173,17 +254,11 @@ export default {
             userId: user.id
           })
         })
-        
-        console.log('响应状态:', response.status)
-        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
-        
         const data = await response.json()
-        console.log('响应数据:', data)
-        
-        if (data) {
+        if (data && !this.isDestroyed) {
           alert('呼叫前台成功')
           this.showCallForm = false
           this.callForm.content = ''
@@ -191,17 +266,15 @@ export default {
         }
       } catch (error) {
         console.error('呼叫前台失败:', error)
-        alert('呼叫前台失败，请稍后重试: ' + error.message)
+        if (!this.isDestroyed) {
+          alert('呼叫前台失败，请稍后重试: ' + error.message)
+        }
       }
     },
     async submitFeedback() {
+      if (this.isDestroyed) return
       try {
-        // 获取当前用户信息
         const user = JSON.parse(sessionStorage.getItem('user'))
-        
-        console.log('提交问题反馈，用户信息:', user)
-        
-        // 使用 fetch API 提交问题反馈请求
         const response = await fetch('/api/admin/service-logs', {
           method: 'POST',
           credentials: 'include',
@@ -215,17 +288,11 @@ export default {
             userId: user.id
           })
         })
-        
-        console.log('响应状态:', response.status)
-        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
-        
         const data = await response.json()
-        console.log('响应数据:', data)
-        
-        if (data) {
+        if (data && !this.isDestroyed) {
           alert('问题反馈成功')
           this.showFeedbackForm = false
           this.feedbackForm.content = ''
@@ -233,13 +300,77 @@ export default {
         }
       } catch (error) {
         console.error('问题反馈失败:', error)
-        alert('问题反馈失败，请稍后重试: ' + error.message)
+        if (!this.isDestroyed) {
+          alert('问题反馈失败，请稍后重试: ' + error.message)
+        }
       }
     },
     formatDate(dateString) {
       if (!dateString) return ''
       const date = new Date(dateString)
       return date.toLocaleString('zh-CN')
+    },
+    // 打开评价弹窗
+    openReviewModal(log) {
+      this.currentReviewLog = log
+      this.reviewForm = {
+        rating: 0,
+        content: ''
+      }
+      this.hoverRating = 0
+      this.showRatingError = false
+      this.submitting = false
+      this.showReviewModal = true
+    },
+    // 关闭评价弹窗
+    closeReviewModal() {
+      this.showReviewModal = false
+      this.currentReviewLog = null
+      this.reviewForm = {
+        rating: 0,
+        content: ''
+      }
+    },
+    // 提交评价
+    async submitReview() {
+      // 验证评分
+      if (this.reviewForm.rating < 1 || this.reviewForm.rating > 5) {
+        this.showRatingError = true
+        return
+      }
+      
+      this.submitting = true
+      try {
+        const response = await fetch(`/api/admin/service-logs/${this.currentReviewLog.id}/review`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            rating: this.reviewForm.rating,
+            review: this.reviewForm.content
+          })
+        })
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
+        const data = await response.json()
+        console.log('评价提交成功:', data)
+        
+        alert('评价提交成功！')
+        this.closeReviewModal()
+        // 重新获取服务日志
+        await this.getServiceLogs()
+        
+      } catch (error) {
+        console.error('评价提交失败:', error)
+        alert('评价提交失败，请稍后重试: ' + error.message)
+      } finally {
+        this.submitting = false
+      }
     }
   }
 }
@@ -249,62 +380,56 @@ export default {
 .front-service {
   max-width: 1000px;
   margin: 0 auto;
-}
-
-.front-service h2 {
-  text-align: center;
-  margin-bottom: 2rem;
-  color: #333;
-}
-
-.service-tabs {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.service-tabs button {
-  padding: 0.8rem 1.5rem;
-  background-color: var(--bg-white);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.service-tabs button.active {
-  background-color: var(--primary-color);
-  color: var(--text-white);
-  border-color: var(--primary-color);
+  animation: fadeInUp var(--transition-slow);
 }
 
 .tab-content {
-  background-color: white;
+  background-color: var(--bg-white);
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
 }
 
 .service-options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  gap: var(--space-xl);
   margin-bottom: 2rem;
 }
 
 .service-card {
-  background-color: #f9f9f9;
+  background-color: var(--bg-white);
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all var(--transition);
+  border: 2px solid var(--border-light);
+  position: relative;
+  overflow: hidden;
+}
+
+.service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary-gradient);
+  transform: scaleX(0);
+  transition: transform var(--transition);
 }
 
 .service-card:hover {
-  background-color: #e9e9e9;
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+}
+
+.service-card:hover::before {
+  transform: scaleX(1);
 }
 
 .service-icon {
@@ -313,28 +438,22 @@ export default {
 }
 
 .service-card h3 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  color: #333;
+  font-size: 1.3rem;
+  margin-bottom: 0.8rem;
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .service-card p {
-  color: #666;
+  color: var(--text-secondary);
   margin: 0;
+  font-size: 0.95rem;
 }
 
 .loading {
   text-align: center;
   padding: 2rem;
-  color: #666;
-}
-
-.empty {
-  text-align: center;
-  padding: 2rem;
-  color: #999;
-  background-color: #f9f9f9;
-  border-radius: 4px;
+  color: var(--text-light);
 }
 
 .history-list {
@@ -344,10 +463,17 @@ export default {
 
 .history-item {
   padding: 1.5rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-light);
   margin-bottom: 1rem;
-  background-color: #f9f9f9;
-  border-radius: 8px;
+  background-color: var(--bg-white);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition);
+}
+
+.history-item:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border-color);
 }
 
 .history-item:last-child {
@@ -364,81 +490,138 @@ export default {
 
 .history-header h4 {
   margin: 0;
-  color: #333;
-  font-size: 1.1rem;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  font-weight: 600;
 }
 
 .history-content {
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 0.5rem;
+  font-size: 0.9rem;
 }
 
 .history-time {
-  color: #999;
-  font-size: 0.9rem;
+  color: var(--text-light);
+  font-size: 0.85rem;
   margin: 0;
 }
 
-.status-badge {
-  display: inline-block;
-  padding: 0.3rem 0.8rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: white;
+.review-display {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: var(--status-warning-bg);
+  border-radius: var(--radius-sm);
+  border-left: 4px solid var(--gold);
 }
 
-.status-pending {
-  background-color: #dc3545;
-}
-
-.status-processed {
-  background-color: #28a745;
-}
-
-.form-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+.rating-stars {
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 1000;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
 }
 
-.form-content {
-  background-color: white;
-  padding: 2rem;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
+.rating-stars .star {
+  font-size: 1.5rem;
+  color: var(--border-color);
+  transition: all var(--transition-fast);
 }
 
-.form-content h3 {
+.rating-stars .star.filled {
+  color: var(--gold);
+}
+
+.rating-text {
+  margin-left: 0.5rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.review-content {
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.review-section {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.review-form-content {
+  max-width: 450px;
+}
+
+.rating-section {
   margin-bottom: 1.5rem;
-  color: #333;
 }
 
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
+.rating-label {
   display: block;
   margin-bottom: 0.5rem;
-  color: #333;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.star-rating {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.5rem 0;
+}
+
+.star-rating .star {
+  font-size: 2.5rem;
+  color: var(--border-color);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.star-rating .star:hover,
+.star-rating .star.hover {
+  color: var(--gold);
+  transform: scale(1.1);
+}
+
+.star-rating .star.filled {
+  color: var(--gold);
+}
+
+.error-text {
+  color: var(--status-danger);
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
+}
+
+.char-counter {
+  text-align: right;
+  color: var(--text-light);
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
 }
 
 .form-group textarea,
 .form-group select {
   width: 100%;
-  padding: 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  transition: all var(--transition);
+  background: var(--bg-white);
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
 }
 
 .form-group textarea {
@@ -446,38 +629,13 @@ export default {
   min-height: 100px;
 }
 
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-
-.btn {
-  padding: 0.6rem 1.2rem;
-  background-color: var(--primary-color);
-  color: var(--text-white);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.95rem;
-}
-
-.btn:hover {
-  background-color: #1a70a5;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-secondary {
-  background-color: var(--bg-white);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-}
-
-.btn-secondary:hover {
-  background-color: var(--bg-light);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+@media (max-width: 640px) {
+  .service-options {
+    grid-template-columns: 1fr;
+  }
+  
+  .star-rating .star {
+    font-size: 2rem;
+  }
 }
 </style>

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.Date;
 import java.util.List;
 import java.util.Calendar;
@@ -26,63 +27,119 @@ public class OrderStatusTask {
     @Autowired
     private RoomRepository roomRepository;
 
-    @Scheduled(cron = "0 0/5 * * * ?")
+    @PostConstruct
+    public void init() {
+        logger.info("=== OrderStatusTask 初始化，执行首次订单状态检查 ===");
+        checkAndUpdateOrderStatus();
+    }
+
+    @Scheduled(cron = "0 0/1 * * * ?")
     public void checkAndUpdateOrderStatus() {
         logger.info("开始检查订单状态...");
         
         Date now = new Date();
-        
-        // 处理自动入住
-        List<Order> reservedOrders = orderRepository.findByStatusIn(Arrays.asList("已预订", "已支付"));
+        int autoCancelCount = 0;
         int checkInCount = 0;
+        int checkOutCount = 0;
+        int expireNotifyCount = 0;
+        int expiredNotifyCount = 0;
+        
+        // 处理待支付超时自动取消（15分钟倒计时）
+        List<Order> pendingOrders = orderRepository.findByStatus("待支付");
+        for (Order order : pendingOrders) {
+            if (order.getCreateTime() != null) {
+                Calendar deadline = Calendar.getInstance();
+                deadline.setTime(order.getCreateTime());
+                deadline.add(Calendar.MINUTE, 15);
+                if (now.after(deadline.getTime())) {
+                    order.setStatus("已取消");
+                    orderRepository.save(order);
+                    Room room = order.getRoom();
+                    if (room != null) {
+                        room.setStatus("空房");
+                        roomRepository.save(room);
+                    }
+                    autoCancelCount++;
+                }
+            }
+        }
+        
+        // 处理自动入住：入住日14:00后自动变为"已入住"
+        List<Order> reservedOrders = orderRepository.findByStatusIn(Arrays.asList("已预订", "已支付"));
         for (Order order : reservedOrders) {
             if (order.getCheckInTime() != null) {
-                // 创建一个新的日期对象，设置为入住日期的12:00:00
-                Date checkInDate = order.getCheckInTime();
                 Calendar calendar = Calendar.getInstance();
-                calendar.setTime(checkInDate);
-                calendar.set(Calendar.HOUR_OF_DAY, 12);
+                calendar.setTime(order.getCheckInTime());
+                calendar.set(Calendar.HOUR_OF_DAY, 14);
                 calendar.set(Calendar.MINUTE, 0);
                 calendar.set(Calendar.SECOND, 0);
-                Date checkInNoon = calendar.getTime();
-                
-                if (now.after(checkInNoon)) {
+                if (now.after(calendar.getTime())) {
                     order.setStatus("已入住");
                     orderRepository.save(order);
-                    
                     Room room = order.getRoom();
                     if (room != null) {
                         room.setStatus("已入住");
                         roomRepository.save(room);
-                        logger.info("房间 {} 状态已更新为已入住", room.getRoomNumber());
                     }
-                    
                     checkInCount++;
-                    logger.info("订单 {} 状态已更新为已入住", order.getOrderNumber());
                 }
             }
         }
         
-        // 处理自动退房
+        // 处理退房相关：到期提醒 → 已到期 → 宽限期自动退房
+        // 12:00退房，11:45到期提醒，12:00到期，13:00宽限期结束自动退房
         List<Order> checkedInOrders = orderRepository.findByStatus("已入住");
-        int checkOutCount = 0;
         for (Order order : checkedInOrders) {
-            if (order.getCheckOutTime() != null && now.after(order.getCheckOutTime())) {
-                order.setStatus("已退房");
+            if (order.getCheckOutTime() == null) continue;
+            Date checkOutTime = order.getCheckOutTime();
+            
+            // 计算宽限期结束时间 = 退房日13:00
+            Calendar graceEndCal = Calendar.getInstance();
+            graceEndCal.setTime(checkOutTime);
+            graceEndCal.set(Calendar.HOUR_OF_DAY, 13);
+            graceEndCal.set(Calendar.MINUTE, 0);
+            graceEndCal.set(Calendar.SECOND, 0);
+            Date graceEnd = graceEndCal.getTime();
+            
+            // 计算到期提醒时间 = 退房日11:45
+            Calendar notifyCal = Calendar.getInstance();
+            notifyCal.setTime(checkOutTime);
+            notifyCal.set(Calendar.HOUR_OF_DAY, 11);
+            notifyCal.set(Calendar.MINUTE, 45);
+            notifyCal.set(Calendar.SECOND, 0);
+            Date notifyTime = notifyCal.getTime();
+            
+            // 计算到期时间 = 退房日12:00
+            Calendar expiredCal = Calendar.getInstance();
+            expiredCal.setTime(checkOutTime);
+            expiredCal.set(Calendar.HOUR_OF_DAY, 12);
+            expiredCal.set(Calendar.MINUTE, 0);
+            expiredCal.set(Calendar.SECOND, 0);
+            Date expiredTime = expiredCal.getTime();
+            
+            // 宽限期结束后（13:00）自动退房
+            if (now.after(graceEnd)) {
+                order.setStatus("自动退房");
                 orderRepository.save(order);
-                
                 Room room = order.getRoom();
                 if (room != null) {
                     room.setStatus("空房");
                     roomRepository.save(room);
-                    logger.info("房间 {} 状态已更新为空房", room.getRoomNumber());
                 }
-                
                 checkOutCount++;
-                logger.info("订单 {} 状态已更新为已退房", order.getOrderNumber());
+                logger.info("订单 {} 已自动退房（宽限期结束）", order.getOrderNumber());
+            }
+            // 12:00已到期但未到13:00，标记为即将到期
+            else if (now.after(expiredTime)) {
+                // 在12:00-13:00宽限期内，无需额外操作，前端显示宽限期UI
+            }
+            // 11:45-12:00 即将到期提醒
+            else if (now.after(notifyTime)) {
+                expireNotifyCount++;
             }
         }
         
-        logger.info("订单状态检查完成，共更新 {} 个入住订单，{} 个退房订单", checkInCount, checkOutCount);
+        logger.info("订单状态检查完成 - 待支付取消:{} 入住:{} 即将到期:{} 已到期:{} 自动退房:{}", 
+                   autoCancelCount, checkInCount, expireNotifyCount, expiredNotifyCount, checkOutCount);
     }
 }

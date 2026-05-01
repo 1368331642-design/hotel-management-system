@@ -1,34 +1,38 @@
 <template>
   <div class="orders">
-    <h2>我的订单</h2>
+    <h2 class="page-title">我的订单</h2>
     <div v-if="loading" class="loading">
+      <div class="loading-spinner"></div>
       <p>加载中...</p>
     </div>
     <div v-else>
-      <div v-if="orders.length === 0" class="no-orders">
+      <div v-if="orders.length === 0" class="empty">
         <p>暂无订单</p>
       </div>
       <div v-else class="orders-list">
-        <div v-for="order in orders" :key="order.id" class="order">
-          <h3>订单号: {{ order.orderNumber }}</h3>
-          <p>房间号: {{ order.room.roomNumber }}</p>
-          <p>房型: {{ order.room.roomType.name }}</p>
-          <p>入住日期: {{ formatDateTime(order.checkInTime) }}</p>
-          <p>退房日期: {{ formatDateTime(order.checkOutTime) }}</p>
-          <p>总价格: ¥{{ order.totalPrice }}</p>
-          <p class="status" :class="getStatusClass(order.status)">{{ order.status }}</p>
+        <div v-for="order in orders" :key="order.id" class="order card">
+          <div class="order-header">
+            <h3>{{ order.orderNumber }}</h3>
+            <span class="status-badge" :class="getStatusClass(order.status)">{{ order.status }}</span>
+          </div>
+          <div class="order-body">
+            <p><span class="label">房间号</span>{{ order.room.roomNumber }}</p>
+            <p><span class="label">房型</span>{{ order.room.roomType.name }}</p>
+            <p><span class="label">入住日期</span>{{ formatDateTime(order.checkInTime) }}</p>
+            <p><span class="label">退房日期</span>{{ formatDateTime(order.checkOutTime) }}</p>
+            <p><span class="label">总价格</span><span class="price">¥{{ order.totalPrice }}</span></p>
+          </div>
           <div class="order-actions">
-            <button v-if="order.status === '待支付'" @click="cancelOrder(order.id)" class="btn btn-cancel">取消订单</button>
-            <button v-if="order.status === '待支付'" @click="payOrder(order.id)" class="btn btn-pay">去支付</button>
-            <button v-if="order.status === '已入住' || order.status === '已预订'" @click="renewOrder(order.id)" class="btn btn-renew">续订</button>
+            <button v-if="order.status === '待支付'" @click="cancelOrder(order.id)" class="btn btn-danger btn-sm">取消订单</button>
+            <button v-if="order.status === '待支付'" @click="payOrder(order.id)" class="btn btn-confirm btn-sm">去支付</button>
+            <button v-if="order.status === '已入住' || order.status === '已预订'" @click="renewOrder(order.id)" class="btn btn-success btn-sm">续订</button>
           </div>
         </div>
       </div>
       
-      <!-- 分页组件 -->
       <div v-if="totalOrders > pageSize" class="pagination">
         <button 
-          class="page-btn" 
+          class="pagination-btn" 
           :disabled="currentPage === 0" 
           @click="changePage(currentPage - 1)">
           上一页
@@ -37,11 +41,17 @@
           第 {{ currentPage + 1 }} / {{ totalPages }} 页，共 {{ totalOrders }} 条
         </span>
         <button 
-          class="page-btn" 
+          class="pagination-btn" 
           :disabled="currentPage >= totalPages - 1" 
           @click="changePage(currentPage + 1)">
           下一页
         </button>
+        <div class="jump-page">
+          <span>跳至</span>
+          <input type="number" v-model.number="jumpPage" @keyup.enter="handleJumpPage" min="1" :max="totalPages" class="form-input" />
+          <span>页</span>
+          <button @click="handleJumpPage" class="btn btn-sm btn-outline">跳转</button>
+        </div>
       </div>
     </div>
   </div>
@@ -58,7 +68,10 @@ export default {
       loading: true,
       currentPage: 0,
       pageSize: 10,
-      totalOrders: 0
+      totalOrders: 0,
+      jumpPage: 1,
+      abortController: null,
+      isDestroyed: false
     }
   },
   computed: {
@@ -69,38 +82,70 @@ export default {
   mounted() {
     this.getOrders()
   },
+  beforeUnmount() {
+    this.isDestroyed = true
+    if (this.abortController) {
+      this.abortController.abort()
+      this.abortController = null
+    }
+  },
   methods: {
     async getOrders() {
+      if (this.isDestroyed) return
       this.loading = true
       try {
+        if (this.abortController) {
+          this.abortController.abort()
+        }
+        this.abortController = new AbortController()
         const response = await axios.get('/api/user/orders', {
           params: {
             page: this.currentPage,
             size: this.pageSize
           },
-          withCredentials: true
+          withCredentials: true,
+          signal: this.abortController.signal
         })
-        // 处理 Page 对象格式
+        if (this.isDestroyed) return
         if (response.data && response.data.content) {
           this.orders = response.data.content
           this.totalOrders = response.data.totalElements || response.data.total
+          if (this.orders.length === 0 && this.totalOrders > 0 && this.currentPage > 0) {
+            const newTotalPages = Math.ceil(this.totalOrders / this.pageSize)
+            this.currentPage = newTotalPages - 1
+            await this.getOrders()
+            return
+          }
         } else {
-          // 兼容非分页格式
           this.orders = response.data
           this.totalOrders = response.data.length
         }
       } catch (error) {
+        if (axios.isCancel(error)) return
         console.error('获取订单失败:', error)
-        alert('获取订单失败，请稍后重试')
+        if (!this.isDestroyed) {
+          alert('获取订单失败，请稍后重试')
+        }
       } finally {
-        this.loading = false
+        if (!this.isDestroyed) {
+          this.loading = false
+        }
       }
     },
     changePage(newPage) {
       this.currentPage = newPage
+      this.jumpPage = this.currentPage + 1
       this.getOrders()
       // 滚动到顶部
       window.scrollTo({ top: 0, behavior: 'smooth' })
+    },
+    handleJumpPage() {
+      let page = parseInt(this.jumpPage)
+      if (isNaN(page) || page < 1 || page > this.totalPages) {
+        this.jumpPage = this.currentPage + 1
+        return
+      }
+      this.changePage(page - 1)
     },
     async cancelOrder(orderId) {
       if (confirm('确定要取消该订单吗？')) {
@@ -131,18 +176,20 @@ export default {
     getStatusClass(status) {
       switch (status) {
         case '待支付':
-          return 'status-pending'
+          return 'status-warning'
         case '已支付':
         case '已预订':
-          return 'status-booked'
+          return 'status-info'
         case '已入住':
-          return 'status-checked-in'
+          return 'status-success'
         case '已完成':
-          return 'status-completed'
+        case '已退房':
+        case '自动退房':
+          return 'status-pending'
         case '已取消':
-          return 'status-cancelled'
+          return 'status-danger'
         default:
-          return ''
+          return 'status-pending'
       }
     }
   }
@@ -153,159 +200,104 @@ export default {
 .orders {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-}
-
-.loading {
-  text-align: center;
-  padding: 4rem;
-  color: #666;
-}
-
-.no-orders {
-  text-align: center;
-  padding: 4rem;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  color: #666;
+  animation: fadeInUp var(--transition-slow);
 }
 
 .orders-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: var(--space-lg);
 }
 
 .order {
-  padding: 1.5rem;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s;
+  position: relative;
+  overflow: hidden;
 }
 
-.order:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+.order::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--primary-gradient);
+  border-radius: 4px 0 0 4px;
 }
 
-.order h3 {
-  margin-bottom: 1rem;
-  color: #333;
-  font-size: 1.2rem;
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border-light);
 }
 
-.order p {
+.order-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.order-body p {
   margin-bottom: 0.5rem;
-  color: #666;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.status {
-  font-weight: bold;
-  margin: 1rem 0;
-  padding: 0.5rem;
-  border-radius: 4px;
-  display: inline-block;
+.order-body .label {
+  color: var(--text-light);
+  min-width: 70px;
+  font-size: 0.85rem;
 }
 
-.status-pending {
-  background-color: #fff3cd;
-  color: #856404;
-}
-
-.status-booked {
-  background-color: #d1ecf1;
-  color: #0c5460;
-}
-
-.status-checked-in {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.status-completed {
-  background-color: #e2e3e5;
-  color: #383d41;
-}
-
-.status-cancelled {
-  background-color: #f8d7da;
-  color: #721c24;
+.order-body .price {
+  color: var(--accent-color);
+  font-weight: 600;
+  font-size: 1rem;
 }
 
 .order-actions {
   display: flex;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.btn {
-  padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  font-size: 0.95rem;
-}
-
-.btn-cancel {
-  background-color: #f44336;
-  color: white;
-}
-
-.btn-cancel:hover {
-  background-color: #d32f2f;
-}
-
-.btn-pay {
-  background-color: #2196f3;
-  color: white;
-}
-
-.btn-pay:hover {
-  background-color: #1976d2;
-}
-
-.btn-renew {
-  background-color: #4caf50;
-  color: white;
-}
-
-.btn-renew:hover {
-  background-color: #388e3c;
-}
-
-/* 分页样式 */
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding: 1rem 0;
-}
-
-.page-btn {
-  padding: 0.5rem 1rem;
-  background-color: #2196f3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.page-btn:hover:not(:disabled) {
-  background-color: #1976d2;
-}
-
-.page-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
+  gap: 0.8rem;
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-light);
 }
 
 .page-info {
-  color: #666;
-  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.jump-page {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-left: 0.8rem;
+}
+
+.jump-page input {
+  width: 56px;
+  padding: 0.35rem 0.5rem;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .orders-list {
+    grid-template-columns: 1fr;
+  }
+  .order-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
 }
 </style>

@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,12 +29,39 @@ public class AdminController {
     private HotelInfoRepository hotelInfoRepository;
 
 
-
     @Autowired
     private OrderRepository orderRepository;
 
     @Autowired
     private RoomRepository roomRepository;
+
+    // 清理过期的待支付订单（15分钟未支付自动取消）
+    private void cleanupExpiredPendingOrders() {
+        List<Order> pendingOrders = orderRepository.findByStatus("待支付");
+        Date now = new Date();
+        int cleaned = 0;
+        for (Order order : pendingOrders) {
+            if (order.getCreateTime() != null) {
+                Calendar deadline = Calendar.getInstance();
+                deadline.setTime(order.getCreateTime());
+                deadline.add(Calendar.MINUTE, 15);
+                if (now.after(deadline.getTime())) {
+                    order.setStatus("已取消");
+                    orderRepository.save(order);
+                    
+                    Room room = order.getRoom();
+                    if (room != null) {
+                        room.setStatus("空房");
+                        roomRepository.save(room);
+                    }
+                    cleaned++;
+                }
+            }
+        }
+        if (cleaned > 0) {
+            System.out.println("[自动取消] 管理员查询时清理了 " + cleaned + " 个过期待支付订单");
+        }
+    }
 
     @GetMapping("/hotel-info")
     public HotelInfo getHotelInfo() {
@@ -58,6 +87,7 @@ public class AdminController {
     public Page<Order> getOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+        cleanupExpiredPendingOrders();
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         return orderRepository.findAll(pageable);
     }
@@ -81,7 +111,7 @@ public class AdminController {
                 totalCancellations++;
             } else if ("已入住".equals(order.getStatus())) {
                 totalCheckIn++;
-            } else if ("已完成".equals(order.getStatus()) || "已退房".equals(order.getStatus())) {
+            } else if ("已完成".equals(order.getStatus()) || "已退房".equals(order.getStatus()) || "自动退房".equals(order.getStatus())) {
                 totalCompleted++;
             }
         }
@@ -110,7 +140,7 @@ public class AdminController {
                 room.setStatus("已预订");
             } else if ("已入住".equals(status)) {
                 room.setStatus("已入住");
-            } else if ("已完成".equals(status) || "已取消".equals(status)) {
+            } else if ("已完成".equals(status) || "已取消".equals(status) || "已退房".equals(status) || "自动退房".equals(status)) {
                 room.setStatus("空房");
             }
             roomRepository.save(room);

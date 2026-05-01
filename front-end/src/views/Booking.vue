@@ -1,12 +1,23 @@
 <template>
   <div class="booking">
-    <h2>{{ isRenew ? '续订' : '在线预订' }}</h2>
+    <h2 class="page-title">{{ isRenew ? '续订' : '在线预订' }}</h2>
     
-    <div v-if="loading" class="loading">
-      <p>加载中...</p>
+    <!-- 未登录提示横幅 -->
+    <div v-if="!isLoggedIn" class="login-prompt-banner">
+      <div class="login-prompt-content">
+        <span class="login-prompt-text">登录后可在在线预订、查看和管理您的预订</span>
+        <button @click="goToLogin" class="login-prompt-btn">登录系统</button>
+        <router-link to="/register" class="login-prompt-register">注册账号</router-link>
+      </div>
     </div>
 
-    <div v-else class="booking-content">
+    <template v-else>
+      <div v-if="loading" class="loading">
+        <div class="loading-spinner"></div>
+        <p>加载中...</p>
+      </div>
+
+      <div v-else class="booking-content">
       <form @submit.prevent="submitBooking">
         <!-- 续订模式下直接显示原订单的房型和房间信息 -->
         <div v-if="isRenew && selectedRoomType" class="form-section">
@@ -78,7 +89,7 @@
               <div v-if="checkInDateError" class="error-message">{{ checkInDateError }}</div>
             </div>
             <div class="form-group">
-              <label for="checkOutDate">退房日期</label>
+              <label for="checkOutDate" style="visibility: hidden; margin-bottom: 0.5rem; display: block;">退</label>
               <input type="date" id="checkOutDate" v-model="form.checkOutDate" :min="minCheckOutDate" @change="validateCheckOutDate" @input="validateCheckOutDate" required>
               <div v-if="checkOutDateError" class="error-message">{{ checkOutDateError }}</div>
             </div>
@@ -138,9 +149,8 @@
         </button>
       </form>
 
-      <!-- 支付界面 -->
-      <div v-if="showPaymentForm" class="payment-overlay">
-        <div class="payment-form">
+      <div v-if="showPaymentForm" class="modal-overlay">
+        <div class="modal-content">
           <h3>{{ isRenew ? '续订支付' : '预订支付' }}</h3>
           <div class="payment-info">
             <p class="payment-amount">支付金额：¥{{ totalPrice }}</p>
@@ -163,16 +173,17 @@
               <label for="card">银行卡</label>
             </div>
           </div>
-          <div class="payment-actions">
-            <button @click="cancelPayment" class="btn btn-cancel" :disabled="paymentProcessing">取消</button>
-            <button @click="processPayment" class="btn btn-primary" :disabled="paymentProcessing">
+          <div class="modal-actions">
+            <button @click="cancelPayment" class="btn btn-ghost" :disabled="paymentProcessing">取消</button>
+            <button @click="processPayment" class="btn btn-confirm" :disabled="paymentProcessing">
               {{ paymentProcessing ? '支付中...' : '确认支付' }}
             </button>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
+        </div>   <!-- closes modal-content -->
+      </div>     <!-- closes modal-overlay -->
+      </div>     <!-- closes booking-content -->
+    </template>  <!-- closes v-else template -->
+  </div>         <!-- closes booking -->
 </template>
 
 <script>
@@ -183,6 +194,7 @@ export default {
   data() {
     return {
       loading: true,
+      isLoggedIn: false,
       loadingAvailability: false,
       submitting: false,
       isRenew: false,
@@ -201,10 +213,12 @@ export default {
       checkOutDateError: '',
       showPaymentForm: false,
       paymentProcessing: false,
-      renewDuration: 1, // 默认续订1天
-      stayDuration: 1, // 默认住房时长1天
-      currentOrderId: null, // 当前订单ID
-      pendingRenewData: null, // 待支付的续订数据
+      renewDuration: 1,
+      stayDuration: 1,
+      currentOrderId: null,
+      pendingRenewData: null,
+      abortController: null,
+      isDestroyed: false,
       form: {
         checkInDate: '',
         checkOutDate: ''
@@ -251,47 +265,79 @@ export default {
              !this.checkOutDateError
     }
   },
+  created() {
+    // 组件渲染前检查登录状态，避免白屏闪烁
+    this.checkLoginStatus()
+  },
   async mounted() {
+    if (!this.isLoggedIn) {
+      this.loading = false
+      return
+    }
+    if (this.isDestroyed) return
     const roomId = this.$route.query.roomId
     const checkInDate = this.$route.query.checkInDate
     const checkOutDate = this.$route.query.checkOutDate
     const renewOrderId = this.$route.query.renewOrderId
     const orderId = this.$route.query.orderId
     const pay = this.$route.query.pay
-
     if (checkInDate) {
       this.form.checkInDate = checkInDate
     }
     if (checkOutDate) {
       this.form.checkOutDate = checkOutDate
     }
-
     if (renewOrderId) {
       this.isRenew = true
       this.renewOrderId = renewOrderId
       await this.loadRenewOrder(renewOrderId)
     }
-
-    // 处理从个人中心跳转过来的支付请求
     if (orderId && pay === 'true') {
       await this.loadOrderForPayment(orderId)
     }
-
     await this.loadData()
-    
+    if (this.isDestroyed) return
     const roomsRes = await axios.get('/api/user/rooms', {
       params: {
-        page: 0, // 获取全部房间
-        size: 1000
+        page: 0,
+        size: 100
       },
       withCredentials: true
     })
-    // 处理Page对象，取content中的数据
-    this.allRooms = roomsRes.data.content || roomsRes.data
-
-    this.loading = false
+    if (!this.isDestroyed) {
+      this.allRooms = roomsRes.data.content || roomsRes.data
+      this.loading = false
+    }
+  },
+  beforeUnmount() {
+    this.isDestroyed = true
+    if (this.abortController) {
+      this.abortController.abort()
+      this.abortController = null
+    }
   },
   methods: {
+    checkLoginStatus() {
+      try {
+        const userStr = sessionStorage.getItem('user')
+        if (!userStr) {
+          this.isLoggedIn = false
+          return
+        }
+        const user = JSON.parse(userStr)
+        if (!user || !user.id) {
+          this.isLoggedIn = false
+          return
+        }
+        this.isLoggedIn = true
+      } catch (e) {
+        console.error('检查登录状态失败:', e)
+        this.isLoggedIn = false
+      }
+    },
+    goToLogin() {
+      this.$router.push('/login/select')
+    },
     formatDateTimeForDisplay(dateString) {
       const date = new Date(dateString)
       const year = date.getFullYear()
@@ -360,6 +406,7 @@ export default {
       }
     },
     async checkAvailability() {
+      if (this.isDestroyed) return
       if (this.checkInDateError || this.checkOutDateError) {
         this.availableRoomsList = []
         this.roomEarliestCheckout = {}
@@ -367,7 +414,6 @@ export default {
         this.earliestCheckoutInfo = ''
         return
       }
-      
       if (!this.form.checkInDate || !this.form.checkOutDate) {
         this.availableRoomsList = []
         this.roomEarliestCheckout = {}
@@ -375,17 +421,16 @@ export default {
         this.earliestCheckoutInfo = ''
         return
       }
-
       this.loadingAvailability = true
       try {
-        // 将日期格式转换为后端期望的日期时间格式
+        if (this.abortController) {
+          this.abortController.abort()
+        }
+        this.abortController = new AbortController()
         const checkInDateTime = new Date(this.form.checkInDate)
-        checkInDateTime.setHours(14, 0, 0, 0) // 默认入住时间为14:00
-        
+        checkInDateTime.setHours(14, 0, 0, 0)
         const checkOutDateTime = new Date(this.form.checkOutDate)
-        checkOutDateTime.setHours(12, 0, 0, 0) // 默认退房时间为12:00
-        
-        // 转换为后端期望的格式：yyyy-MM-dd'T'HH:mm
+        checkOutDateTime.setHours(12, 0, 0, 0)
         const formatDateTime = (date) => {
           const year = date.getFullYear()
           const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -394,49 +439,61 @@ export default {
           const minutes = String(date.getMinutes()).padStart(2, '0')
           return `${year}-${month}-${day}T${hours}:${minutes}`
         }
-        
         const response = await axios.get('/api/user/rooms/available', {
           params: {
             checkInDate: formatDateTime(checkInDateTime),
             checkOutDate: formatDateTime(checkOutDateTime)
           },
-          withCredentials: true
+          withCredentials: true,
+          signal: this.abortController.signal
         })
+        if (this.isDestroyed) return
         this.availableRoomsList = response.data.availableRooms
         this.roomEarliestCheckout = response.data.roomEarliestCheckout
         this.selectedRoom = null
         this.earliestCheckoutInfo = ''
         this.calculatePrice()
       } catch (error) {
+        if (axios.isCancel(error)) return
         console.error('查询可用房间失败:', error)
-        alert('查询可用房间失败，请稍后重试')
+        if (!this.isDestroyed) {
+          alert('查询可用房间失败，请稍后重试')
+        }
       } finally {
-        this.loadingAvailability = false
+        if (!this.isDestroyed) {
+          this.loadingAvailability = false
+        }
       }
     },
     async loadData() {
+      if (this.isDestroyed) return
       try {
         const roomTypesRes = await axios.get('/api/user/room-types', { withCredentials: true })
-        this.roomTypes = roomTypesRes.data
+        if (!this.isDestroyed) {
+          this.roomTypes = roomTypesRes.data
+        }
       } catch (error) {
+        if (axios.isCancel(error)) return
         console.error('加载数据失败:', error)
-        alert('加载数据失败，请刷新页面重试')
+        if (!this.isDestroyed) {
+          alert('加载数据失败，请刷新页面重试')
+        }
       }
     },
     async loadRenewOrder(orderId) {
+      if (this.isDestroyed) return
       try {
         const response = await axios.get('/api/user/orders', {
           params: {
-            page: 0, // 获取全部订单
-            size: 1000
+            page: 0,
+            size: 50
           },
           withCredentials: true
         })
-        // 处理Page对象，取content中的数据
+        if (this.isDestroyed) return
         const ordersData = response.data.content || response.data
         const order = ordersData.find(o => o.id === parseInt(orderId))
         if (order) {
-          // 设置起始日期为原订单的退房时间
           if (order.checkOutTime) {
             const checkOutDate = new Date(order.checkOutTime)
             const year = checkOutDate.getFullYear()
@@ -444,47 +501,41 @@ export default {
             const day = String(checkOutDate.getDate()).padStart(2, '0')
             this.form.checkInDate = `${year}-${month}-${day}`
           } else {
-            // 如果没有退房时间，使用当前时间
             const now = new Date()
             const year = now.getFullYear()
             const month = String(now.getMonth() + 1).padStart(2, '0')
             const day = String(now.getDate()).padStart(2, '0')
             this.form.checkInDate = `${year}-${month}-${day}`
           }
-          
-          // 加载原订单的房型和房间信息
           if (order.room && order.room.roomType) {
             this.selectedRoomType = order.room.roomType
             this.selectedRoom = order.room
           }
-          
-          // 计算默认退房日期（默认续订1天）
           this.calculateCheckOutDate()
         }
       } catch (error) {
+        if (axios.isCancel(error)) return
         console.error('加载续订订单失败:', error)
       }
     },
     async loadOrderForPayment(orderId) {
+      if (this.isDestroyed) return
       try {
         const response = await axios.get('/api/user/orders', {
           params: {
-            page: 0, // 获取全部订单
-            size: 1000
+            page: 0,
+            size: 50
           },
           withCredentials: true
         })
-        // 处理Page对象，取content中的数据
+        if (this.isDestroyed) return
         const ordersData = response.data.content || response.data
         const order = ordersData.find(o => o.id === parseInt(orderId))
         if (order) {
-          // 加载订单的房型和房间信息
           if (order.room && order.room.roomType) {
             this.selectedRoomType = order.room.roomType
             this.selectedRoom = order.room
           }
-          
-          // 加载订单的日期信息
           if (order.checkInTime) {
             const checkInDate = new Date(order.checkInTime)
             const year = checkInDate.getFullYear()
@@ -492,7 +543,6 @@ export default {
             const day = String(checkInDate.getDate()).padStart(2, '0')
             this.form.checkInDate = `${year}-${month}-${day}`
           }
-          
           if (order.checkOutTime) {
             const checkOutDate = new Date(order.checkOutTime)
             const year = checkOutDate.getFullYear()
@@ -500,24 +550,19 @@ export default {
             const day = String(checkOutDate.getDate()).padStart(2, '0')
             this.form.checkOutDate = `${year}-${month}-${day}`
           }
-          
-          // 加载订单的价格信息
           this.totalPrice = order.totalPrice
-          this.totalHours = 24 // 保持totalHours用于其他计算
+          this.totalHours = 24
           this.durationText = '1天'
-          
-          // 保存订单ID
           this.currentOrderId = order.id
-          
-          // 跳过房间可用性检查，因为用户已经预定了该房间
           this.availableRoomsList = [order.room]
-          
-          // 直接显示支付页面
           this.showPaymentForm = true
         }
       } catch (error) {
+        if (axios.isCancel(error)) return
         console.error('加载订单失败:', error)
-        alert('加载订单失败，请稍后重试')
+        if (!this.isDestroyed) {
+          alert('加载订单失败，请稍后重试')
+        }
       }
     },
     calculateCheckOutDate() {
@@ -757,33 +802,20 @@ export default {
 .booking {
   max-width: 900px;
   margin: 0 auto;
-  padding: 2rem;
-}
-
-.booking h2 {
-  text-align: center;
-  margin-bottom: 2rem;
-  color: var(--text-primary);
-}
-
-.loading {
-  text-align: center;
-  padding: 3rem;
-  color: var(--text-secondary);
 }
 
 .booking-content {
   background-color: var(--bg-white);
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-light);
 }
 
 .form-section {
   margin-bottom: 2rem;
   padding-bottom: 2rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .form-section:last-of-type {
@@ -795,15 +827,18 @@ export default {
 .form-section h3 {
   margin-bottom: 1.5rem;
   color: var(--text-primary);
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding-left: 0.5rem;
+  border-left: 3px solid var(--primary-color);
 }
 
 .no-rooms {
   text-align: center;
   padding: 3rem;
   background-color: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
   color: var(--text-secondary);
   font-size: 1.1rem;
   box-shadow: var(--shadow-sm);
@@ -818,21 +853,22 @@ export default {
 .room-type-card {
   display: flex;
   background-color: var(--bg-white);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-md);
   padding: 1rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition);
 }
 
 .room-type-card:hover {
-  border-color: var(--primary-color);
+  border-color: var(--primary-light);
   box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .room-type-card.active {
   border-color: var(--primary-color);
-  background-color: var(--bg-light);
+  background-color: var(--status-info-bg);
 }
 
 .room-type-image {
@@ -846,7 +882,7 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .room-type-info {
@@ -860,8 +896,8 @@ export default {
 
 .room-type-info .price {
   font-size: 1.2rem;
-  font-weight: bold;
-  color: var(--status-danger);
+  font-weight: 700;
+  color: var(--accent-color);
   margin: 0 0 0.3rem 0;
 }
 
@@ -895,8 +931,8 @@ export default {
 .preview-price {
   margin: 0;
   font-size: 1.2rem;
-  font-weight: bold;
-  color: var(--status-danger);
+  font-weight: 700;
+  color: var(--accent-color);
 }
 
 .date-section {
@@ -906,104 +942,53 @@ export default {
   align-items: start;
 }
 
-.duration-info {
-  margin-top: 1.5rem;
-  padding: 1rem 1.5rem;
-  background-color: #eaf5ff;
-  border: 1px solid var(--primary-light);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.duration-label {
-  margin: 0;
-  font-size: 1rem;
-  color: var(--primary-dark);
-  font-weight: 500;
-}
-
-.duration-value {
-  margin: 0;
-  font-size: 1.3rem;
-  font-weight: bold;
-  color: var(--primary-dark);
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 0.8rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  transition: all var(--transition);
+  background: var(--bg-white);
+  color: var(--text-primary);
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(35, 133, 187, 0.2);
-}
-
-.form-group input.error,
-.form-group select.error {
-  border-color: var(--status-danger);
+  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
 }
 
 .error-message {
   color: var(--status-danger);
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   margin-top: 0.5rem;
-}
-
-.available-rooms-section {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border-light);
-}
-
-.available-rooms-section h4 {
-  margin-bottom: 1rem;
-  color: var(--text-secondary);
-  font-size: 1rem;
 }
 
 .no-rooms-warning {
   padding: 1.5rem;
-  background-color: #fff8e6;
+  background-color: var(--status-warning-bg);
   border: 1px solid var(--status-warning);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   text-align: center;
-  color: #9f6b0a;
-  font-size: 1.1rem;
+  color: var(--status-warning);
+  font-size: 1.05rem;
 }
 
 .earliest-checkout {
   margin-top: 1rem;
   padding: 1rem;
-  background-color: #eaf5ff;
+  background-color: var(--status-info-bg);
   border: 1px solid var(--primary-light);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .earliest-checkout p {
   margin: 0;
   color: var(--primary-dark);
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .available-rooms-list {
@@ -1013,19 +998,19 @@ export default {
 }
 
 .room-item {
-  padding: 0.8rem 1.5rem;
+  padding: 0.7rem 1.4rem;
   background-color: var(--bg-white);
   border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 1rem;
+  transition: all var(--transition);
+  font-size: 0.95rem;
   font-weight: 500;
 }
 
 .room-item:hover {
   border-color: var(--primary-color);
-  background-color: var(--bg-light);
+  background-color: var(--status-info-bg);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
@@ -1039,8 +1024,8 @@ export default {
 .price-section {
   background-color: var(--bg-white);
   padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
 }
 
 .price-summary {
@@ -1052,88 +1037,34 @@ export default {
 .price-item {
   display: flex;
   justify-content: space-between;
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
 }
 
 .price-item.total {
   font-size: 1.3rem;
-  font-weight: bold;
+  font-weight: 700;
   color: var(--text-primary);
   padding-top: 0.8rem;
-  border-top: 2px solid var(--border-color);
+  border-top: 2px solid var(--border-light);
 }
 
 .price-item.total span:last-child {
-  color: var(--status-danger);
-}
-
-.btn {
-  width: 100%;
-  padding: 1rem;
-  background-color: var(--primary-color);
-  color: var(--text-white);
-  border: none;
-  border-radius: 4px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn:hover:not(:disabled) {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-.btn:disabled {
-  background-color: var(--text-light);
-  cursor: not-allowed;
-}
-
-/* 支付界面样式 */
-.payment-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.payment-form {
-  background-color: var(--bg-white);
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: var(--shadow-lg);
-  width: 100%;
-  max-width: 500px;
-  border: 1px solid var(--border-color);
-}
-
-.payment-form h3 {
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  color: var(--text-primary);
-  text-align: center;
+  color: var(--accent-color);
 }
 
 .payment-info {
   margin-bottom: 1.5rem;
   padding: 1rem;
   background-color: var(--bg-light);
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
 }
 
 .payment-amount {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--status-danger);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--accent-color);
   margin: 0 0 0.5rem 0;
 }
 
@@ -1151,72 +1082,33 @@ export default {
   margin-top: 0;
   margin-bottom: 1rem;
   color: var(--text-secondary);
+  font-size: 0.95rem;
 }
 
 .payment-option {
   margin-bottom: 0.8rem;
   display: flex;
   align-items: center;
+  gap: 0.5rem;
 }
 
-.payment-option input[type="radio"] {
-  margin-right: 0.5rem;
-}
-
-.payment-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-}
-
-.btn-cancel {
-  background-color: var(--text-light);
-  color: var(--text-white);
-}
-
-.btn-cancel:hover:not(:disabled) {
-  background-color: var(--text-secondary);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-primary {
-  background-color: var(--primary-color);
-  color: var(--text-white);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-/* 续订信息样式 */
 .renew-info {
-  background-color: #eaf5ff;
+  background-color: var(--status-info-bg);
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--primary-light);
 }
 
 .renew-info p {
   margin: 0.5rem 0;
   color: var(--primary-dark);
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .renew-info p strong {
   color: var(--primary-color);
 }
 
-/* 续订时长选择样式 */
-.duration-section {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-}
-
-/* 续订时长居中样式 */
 .duration-section-center {
   display: flex;
   justify-content: center;
@@ -1239,26 +1131,89 @@ export default {
 
 .form-group-center select {
   width: 100%;
-  padding: 0.8rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  transition: all var(--transition);
+  background: var(--bg-white);
+  color: var(--text-primary);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23909399' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 2rem;
+  cursor: pointer;
 }
 
 .form-group-center select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(35, 133, 187, 0.2);
+  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
 }
 
 @media (max-width: 768px) {
-  .duration-section {
+  .date-section {
     grid-template-columns: 1fr;
   }
-  
   .form-group-center {
     max-width: 100%;
   }
+}
+
+/* ======= 未登录提示横幅 ======= */
+.login-prompt-banner {
+  background: linear-gradient(135deg, #e8f4fa 0%, #f0f7fd 100%);
+  border: 1px solid #c5e2f2;
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.login-prompt-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.login-prompt-text {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.login-prompt-btn {
+  padding: 0.5rem 1.5rem;
+  background: var(--primary-gradient);
+  color: var(--text-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.25);
+  text-decoration: none;
+}
+
+.login-prompt-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(35, 133, 187, 0.35);
+}
+
+.login-prompt-register {
+  color: var(--primary-color);
+  font-size: 0.9rem;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+}
+
+.login-prompt-register:hover {
+  background: rgba(35, 133, 187, 0.08);
 }
 </style>

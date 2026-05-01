@@ -1,9 +1,8 @@
 <template>
   <div class="login-entry">
-    <h2 class="login-entry-title">请选择登录方式</h2>
     <div class="login-entry-container">
       <div class="login-entry-icon">🏨</div>
-      <h3 class="login-entry-subtitle">欢迎使用酒店管理系统</h3>
+      <h3 class="login-entry-subtitle">欢迎光临翻斗花园酒店</h3>
       <p class="login-entry-description">请登录以继续</p>
       <button @click="goToLogin" class="login-btn">登录系统</button>
     </div>
@@ -23,70 +22,72 @@ export default {
 
 <style scoped>
 .login-entry {
-  min-height: 80vh;
+  min-height: 85vh;
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-  background-color: var(--bg-color);
   padding: 2rem;
 }
 
-.login-entry-title {
-  color: var(--text-color);
-  font-size: 1.5rem;
-  margin-bottom: 3rem;
-  text-align: center;
-}
-
 .login-entry-container {
-  background-color: var(--card-bg);
-  padding: 3rem;
-  border-radius: 8px;
-  box-shadow: var(--shadow-md);
+  background: var(--bg-white);
+  padding: 3.5rem 3rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
   text-align: center;
-  max-width: 350px;
+  max-width: 380px;
   width: 100%;
-  transition: transform 0.3s;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-light);
+  animation: scaleIn var(--transition);
+  position: relative;
+  overflow: hidden;
 }
 
-.login-entry-container:hover {
-  transform: translateY(-5px);
+.login-entry-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary-gradient);
 }
 
 .login-entry-icon {
   font-size: 4rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  display: inline-block;
+  animation: fadeInUp var(--transition-slow);
 }
 
 .login-entry-subtitle {
-  font-size: 1.3rem;
-  margin-bottom: 1rem;
-  color: var(--text-color);
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  font-weight: 700;
 }
 
 .login-entry-description {
-  font-size: 1rem;
+  color: var(--text-light);
   margin-bottom: 2rem;
-  color: #666;
+  font-size: 0.95rem;
 }
 
 .login-btn {
-  padding: 0.8rem 2rem;
-  background-color: var(--primary-color);
+  padding: 0.8rem 2.5rem;
+  background: var(--primary-gradient);
   color: var(--text-white);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
+  font-size: 1.05rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 1rem;
-  font-weight: 500;
+  transition: all var(--transition);
+  box-shadow: 0 4px 16px rgba(35, 133, 187, 0.3);
 }
 
 .login-btn:hover {
-  background-color: #1a70a5;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(35, 133, 187, 0.4);
 }
 </style>
