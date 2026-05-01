@@ -34,7 +34,7 @@
               <th>价格/晚</th>
               <th>当前状态</th>
               <th>入住客户</th>
-              <th>预计退房</th>
+              <th>住房日期</th>
               <th>操作</th>
               <th>清洁状态</th>
             </tr>
@@ -55,8 +55,11 @@
                 <span v-else class="no-guest">—</span>
               </td>
               <td class="cell-date">
-                <template v-if="room._checkOutTime">
-                  {{ formatDate(room._checkOutTime) }}
+                <template v-if="room._checkInTime && room._checkOutTime">
+                  {{ formatDate(room._checkInTime) }} 至 {{ formatDate(room._checkOutTime) }}
+                </template>
+                <template v-else-if="room._checkInTime">
+                  {{ formatDate(room._checkInTime) }}
                 </template>
                 <span v-else class="no-guest">—</span>
               </td>
@@ -211,6 +214,7 @@ export default {
           return {
             ...room,
             _guestName: order?.user?.name || order?.user?.username || null,
+            _checkInTime: order?.checkInTime || null,
             _checkOutTime: order?.checkOutTime || null,
             _cleaningStatus: existingRoom?._cleaningStatus || null
           }
@@ -248,9 +252,9 @@ export default {
       if (!dateString) return '-'
       const d = new Date(dateString)
       const y = d.getFullYear()
-      const m = String(d.getMonth() + 1).padStart(2, '0')
-      const day = String(d.getDate()).padStart(2, '0')
-      return `${y}-${m}-${day}`
+      const m = d.getMonth() + 1
+      const day = d.getDate()
+      return `${y}/${m}/${day}`
     },
     openStatusDialog(roomId, currentStatus) {
       this.currentRoomId = roomId

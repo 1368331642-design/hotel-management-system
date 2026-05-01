@@ -2,7 +2,7 @@
   <div class="rooms">
     <h2 class="page-title">我的房间</h2>
     
-    <div v-if="!isLoggedIn" class="login-prompt-banner">
+    <div v-if="!isLoggedIn" class="login-prompt-banner page-soft-enter">
       <div class="login-prompt-content">
         <span class="login-prompt-text">登录后可查看我的房间订单</span>
         <button @click="goToLogin" class="login-prompt-btn">登录系统</button>
@@ -14,7 +14,7 @@
 
     <ErrorRetry v-else-if="error" :message="error" @retry="getOrders" />
 
-    <div v-else-if="myOrders.length === 0" class="no-rooms">
+    <div v-else-if="myOrders.length === 0" class="no-rooms page-soft-enter">
       <div class="empty-icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4"/><path d="M3 7v10l9 4"/><path d="M12 17l9-4V7"/><path d="M12 17v4"/><path d="M8 5.5l8 3.5"/></svg>
       </div>
@@ -23,7 +23,12 @@
     </div>
 
     <div v-else class="orders-list">
-      <div v-for="order in myOrders" :key="order.id" :class="['order-item', 'order-status-' + getOrderStatusClass(order)]">
+      <div
+        v-for="(order, index) in myOrders"
+        :key="order.id"
+        :class="['order-item', 'order-status-' + getOrderStatusClass(order), 'list-stagger-enter']"
+        :style="{ animationDelay: `${Math.min(index * 70, 280)}ms` }"
+      >
         <div class="order-info">
           <h3 class="room-type-title">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>
@@ -704,6 +709,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  animation: fadeInSoft 260ms ease both;
 }
 
 .order-item {
@@ -723,6 +729,7 @@ export default {
 .order-item:hover {
   box-shadow: var(--shadow-md);
   border-color: var(--border-color);
+  transform: translateY(-2px) scale(1.01);
 }
 
 .order-status-reserved {
@@ -887,6 +894,16 @@ export default {
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border-light);
+  animation: fadeInSoft 280ms ease both;
+}
+
+@keyframes fadeInSoft {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .pagination-info {

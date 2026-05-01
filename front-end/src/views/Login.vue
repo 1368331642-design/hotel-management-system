@@ -121,13 +121,15 @@ export default {
 
 <style scoped>
 .login {
-  min-height: 85vh;
+  height: 100%;
+  min-height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   max-width: 900px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.2rem 2rem;
+  overflow: hidden;
 }
 
 .login-type-select {

@@ -22,11 +22,13 @@ export default {
 
 <style scoped>
 .login-entry {
-  min-height: 85vh;
+  height: 100%;
+  min-height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 2rem;
+  padding: 1.2rem 2rem;
+  overflow: hidden;
 }
 
 .login-entry-container {

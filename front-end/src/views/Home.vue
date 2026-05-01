@@ -74,9 +74,6 @@
         <div class="hero">
           <h2>前台服务中心</h2>
           <p>客户咨询处理和客房状态管理</p>
-          <div class="buttons">
-            <button @click="goToFrontDesk" class="btn">前台服务</button>
-          </div>
         </div>
         <div class="features">
           <div class="feature" @click="goToFrontDesk" style="cursor: pointer;">
@@ -1151,6 +1148,29 @@ export default {
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
+  transition: all var(--transition);
+}
+
+.feature::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary-gradient);
+  transform: scaleX(0);
+  transition: transform var(--transition);
+}
+
+.feature:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-light);
+}
+
+.feature:hover::before {
+  transform: scaleX(1);
 }
 
 .feature-icon {
@@ -1166,6 +1186,12 @@ export default {
   box-shadow: var(--shadow-xs);
   position: relative;
   z-index: 1;
+  transition: all var(--transition);
+}
+
+.feature:hover .feature-icon {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .feature h3 {
