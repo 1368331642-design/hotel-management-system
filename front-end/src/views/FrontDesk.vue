@@ -10,11 +10,10 @@
     <div v-if="activeTab === 'serviceLogs'" class="tab-content">
       <h3>服务咨询</h3>
       
-      <div v-if="loadingServiceLogs" class="loading">
-        <p>加载中...</p>
-      </div>
-      
-      <div v-else>
+      <LoadingSpinner v-if="loadingServiceLogs" variant="frontdesk" size="small" />
+      <ErrorRetry v-else-if="serviceLogsError" :message="serviceLogsError" @retry="getServiceLogs" />
+
+      <div v-else-if="!loadingServiceLogs && !serviceLogsError">
         <div class="list">
           <h4>咨询列表</h4>
           <div v-if="pendingServiceLogs.length === 0" class="empty">
@@ -95,11 +94,10 @@
     <div v-if="activeTab === 'roomStatus'" class="tab-content">
       <h3>客房状态</h3>
       
-      <div v-if="loadingRooms" class="loading">
-        <p>加载中...</p>
-      </div>
-      
-      <div v-else class="list">
+      <LoadingSpinner v-if="loadingRooms" variant="frontdesk" size="small" />
+      <ErrorRetry v-else-if="roomsError" :message="roomsError" @retry="getRooms" />
+
+      <div v-else-if="!loadingRooms && !roomsError" class="list">
         <h4>房间列表</h4>
         <div v-if="rooms.length === 0" class="empty">
           <p>暂无房间数据</p>
@@ -154,9 +152,15 @@
 
 <script>
 import axios from 'axios'
+import LoadingSpinner from '../components/LoadingSpinner.vue'
+import ErrorRetry from '../components/ErrorRetry.vue'
 
 export default {
   name: 'FrontDesk',
+  components: {
+    LoadingSpinner,
+    ErrorRetry
+  },
   data() {
     return {
       activeTab: 'serviceLogs',
@@ -171,6 +175,8 @@ export default {
       refreshInterval: null,
       loadingServiceLogs: false,
       loadingRooms: false,
+      serviceLogsError: null,
+      roomsError: null,
       currentPage: 1,
       pageSize: 5,
       jumpPage: 1
@@ -235,29 +241,25 @@ export default {
 
     async getServiceLogs() {
       this.loadingServiceLogs = true
-      console.log('开始获取服务日志...')
+      this.serviceLogsError = null
       try {
         const response = await axios.get('/api/admin/service-logs', {
           params: {
-            page: 0, // 获取全部服务日志用于前端分类
+            page: 0,
             size: 100
           },
           withCredentials: true
         })
-        console.log('服务日志响应:', response.data)
-        // 处理Page对象，取content中的数据
         const logsData = response.data.content || response.data
         this.serviceLogs = logsData.map(log => {
-          // 处理 status 字段，确保它是字符串
           if (typeof log.status === 'object' && log.status !== null) {
             log.status = log.status.status || '待处理'
           }
           return log
         })
-        console.log('处理后的服务日志:', this.serviceLogs)
       } catch (error) {
         console.error('获取服务日志失败:', error)
-        alert('获取服务日志失败: ' + error.message)
+        this.serviceLogsError = '获取服务日志失败，请检查网络后重试'
       } finally {
         this.loadingServiceLogs = false
       }
@@ -292,21 +294,19 @@ export default {
     },
     async getRooms() {
       this.loadingRooms = true
-      console.log('开始获取房间列表...')
+      this.roomsError = null
       try {
         const response = await axios.get('/api/user/rooms', {
           params: {
-            page: 0, // 获取全部房间
+            page: 0,
             size: 100
           },
           withCredentials: true
         })
-        console.log('房间列表响应:', response.data)
-        // 处理Page对象，取content中的数据
         this.rooms = response.data.content || response.data
       } catch (error) {
         console.error('获取房间失败:', error)
-        alert('获取房间失败: ' + error.message)
+        this.roomsError = '获取房间数据失败，请检查网络后重试'
       } finally {
         this.loadingRooms = false
       }
@@ -599,30 +599,6 @@ export default {
   margin: 0;
   line-height: 1.5;
   font-size: 0.9rem;
-}
-
-.jump-page {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-left: 0.8rem;
-}
-
-.jump-page input {
-  width: 56px;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  text-align: center;
-  outline: none;
-  transition: all var(--transition);
-}
-
-.jump-page input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
 }
 
 @media (max-width: 768px) {

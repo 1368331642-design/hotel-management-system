@@ -788,7 +788,6 @@ export default {
   background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
   border-radius: 6px;
   border: 1px solid var(--border-light);
-  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
   cursor: pointer;
   user-select: none;
   overflow: hidden;
@@ -868,7 +867,6 @@ export default {
 .expand-arrow {
   font-size: 0.6rem;
   color: var(--text-light);
-  transition: transform var(--transition);
   flex-shrink: 0;
 }
 
@@ -940,33 +938,6 @@ export default {
   border-top: 1px solid var(--border-light);
 }
 
-.slide-fade-enter-active {
-  transition: opacity 0.25s ease-out, transform 0.25s ease-out, max-height 0.25s ease-out;
-}
-
-.slide-fade-leave-active {
-  transition: opacity 0.2s ease-in, transform 0.2s ease-in, max-height 0.2s ease-in;
-}
-
-.slide-fade-enter-from {
-  opacity: 0;
-  transform: translateY(-8px);
-  max-height: 0;
-}
-
-.slide-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-  max-height: 0;
-}
-
-.slide-fade-enter-to,
-.slide-fade-leave-from {
-  opacity: 1;
-  transform: translateY(0);
-  max-height: 300px;
-}
-
 .countdown-expired {
   color: var(--status-danger);
   font-weight: 500;
@@ -981,13 +952,10 @@ export default {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
 .btn-checkout:hover {
   background-color: #d94c4c;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
 }
 
 .btn-renew {
@@ -1000,13 +968,10 @@ export default {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
 .btn-renew:hover {
   background-color: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
 }
 
 .btn-pay {
@@ -1018,13 +983,10 @@ export default {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
 .btn-pay:hover {
   background-color: #cf8a2e;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
 }
 
 .countdown {
@@ -1046,13 +1008,10 @@ export default {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
 .btn-room-detail:hover {
   background-color: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
 }
 
 .btn-cancel {
@@ -1065,13 +1024,10 @@ export default {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
 .btn-cancel:hover {
   background-color: #d94c4c;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
 }
 
 .btn-early-checkout {
@@ -1084,13 +1040,10 @@ export default {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
 .btn-early-checkout:hover {
   background-color: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
 }
 
 /* ======= 未登录提示横幅 ======= */
@@ -1125,14 +1078,8 @@ export default {
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition);
   box-shadow: 0 4px 12px rgba(35, 133, 187, 0.25);
   text-decoration: none;
-}
-
-.login-prompt-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(35, 133, 187, 0.35);
 }
 
 .login-prompt-register {
@@ -1142,40 +1089,23 @@ export default {
   font-weight: 500;
   padding: 0.4rem 0.8rem;
   border-radius: var(--radius-sm);
-  transition: all var(--transition);
-}
-
-.login-prompt-register:hover {
-  background: rgba(35, 133, 187, 0.08);
 }
 
 /* ======= 管理员端专属样式 ======= */
 .admin-home .features .feature:nth-child(1) .feature-icon {
   background: linear-gradient(135deg, #e8f4fa 0%, #c5e2f2 100%);
 }
-.admin-home .features .feature:nth-child(1):hover .feature-icon {
-  background: var(--primary-gradient);
-}
 
 .admin-home .features .feature:nth-child(2) .feature-icon {
   background: linear-gradient(135deg, #f0e8fa 0%, #e0d0f5 100%);
-}
-.admin-home .features .feature:nth-child(2):hover .feature-icon {
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
 }
 
 .admin-home .features .feature:nth-child(3) .feature-icon {
   background: linear-gradient(135deg, #fdf6ec 0%, #f5e6c8 100%);
 }
-.admin-home .features .feature:nth-child(3):hover .feature-icon {
-  background: linear-gradient(135deg, #e6a23c 0%, #cf9236 100%);
-}
 
 .admin-home .features .feature:nth-child(4) .feature-icon {
   background: linear-gradient(135deg, #ecfdf3 0%, #c8f0d8 100%);
-}
-.admin-home .features .feature:nth-child(4):hover .feature-icon {
-  background: linear-gradient(135deg, #67c23a 0%, #5daf34 100%);
 }
 
 /* ======= 前台端专属样式 ======= */
@@ -1257,8 +1187,6 @@ export default {
 .btn-outline:hover {
   background-color: var(--primary-color) !important;
   color: var(--text-white) !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(35, 133, 187, 0.3);
 }
 
 .features {
@@ -1300,33 +1228,9 @@ export default {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
   text-align: center;
-  transition: all var(--transition);
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
-}
-
-.feature::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--primary-gradient);
-  transform: scaleX(0);
-  transition: transform var(--transition);
-}
-
-.feature:hover {
-  border-color: var(--primary-light);
-  transform: translateY(-8px);
-  box-shadow: var(--shadow-lg);
-  background: var(--card-hover-gradient);
-}
-
-.feature:hover::before {
-  transform: scaleX(1);
 }
 
 .feature-icon {
@@ -1340,15 +1244,8 @@ export default {
   margin: 0 auto 1.2rem;
   background: linear-gradient(135deg, #e8f4fa 0%, #d4eaf5 100%);
   box-shadow: 0 4px 12px rgba(35,133,187,0.1);
-  transition: all var(--transition);
   position: relative;
   z-index: 1;
-}
-
-.feature:hover .feature-icon {
-  background: var(--primary-gradient);
-  transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(35,133,187,0.25);
 }
 
 .feature h3 {
@@ -1382,7 +1279,6 @@ export default {
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  animation: fadeIn var(--transition-fast);
 }
 
 .modal-content {
@@ -1392,7 +1288,6 @@ export default {
   width: 90%;
   max-width: 400px;
   box-shadow: var(--shadow-xl);
-  animation: scaleIn var(--transition);
 }
 
 .modal-content h3 {

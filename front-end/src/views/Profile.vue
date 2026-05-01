@@ -149,14 +149,7 @@
       <div v-if="subOrderTab === 'history' && historyTotalElements > 0" class="pagination-wrapper">
         <div class="pagination-top-row">
           <div class="pagination-info">
-            共 {{ historyTotalElements }} 条记录，第 {{ historyCurrentPage }} / {{ historyTotalPages }} 页
-          </div>
-          <div class="page-size-selector">
-            <span>每页</span>
-            <select v-model.number="historyPageSize" @change="historyChangePageSize" class="page-size-select">
-              <option v-for="size in historyPageSizeOptions" :key="size" :value="size">{{ size }}</option>
-            </select>
-            <span>条</span>
+            共 {{ historyTotalElements }} 条记录，第 {{ historyCurrentPage }} / {{ historyTotalPages }} 页·每页 5 条
           </div>
         </div>
         <div class="pagination">
@@ -370,7 +363,6 @@ export default {
       showSelectAll: false,
       historyCurrentPage: 1,
       historyPageSize: 5,
-      historyPageSizeOptions: [5, 10, 20],
       historyTotalElements: 0,
       historyJumpPage: 1,
       historyLoading: false,
@@ -767,10 +759,6 @@ export default {
         return
       }
       this.historyGoToPage(page)
-    },
-    historyChangePageSize() {
-      this.historyCurrentPage = 1
-      this.historyJumpPage = 1
     },
     canDeleteOrder(order) {
       return true
@@ -1716,31 +1704,6 @@ export default {
   font-size: 0.9rem;
 }
 
-.page-size-selector {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-.page-size-select {
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background-color: var(--bg-white);
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  outline: none;
-  cursor: pointer;
-  transition: all var(--transition);
-}
-
-.page-size-select:hover,
-.page-size-select:focus {
-  border-color: var(--primary-color);
-}
-
 .pagination {
   display: flex;
   justify-content: center;
@@ -1810,45 +1773,6 @@ export default {
   display: flex;
   align-items: center;
   font-weight: bold;
-}
-
-.jump-page {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-.jump-page input {
-  width: 56px;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  text-align: center;
-  outline: none;
-  transition: all var(--transition);
-}
-
-.jump-page input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
-}
-
-.jump-btn {
-  padding: 0.35rem 0.8rem;
-  background-color: var(--bg-white);
-  color: var(--primary-color);
-  border: 1px solid var(--primary-color);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all var(--transition);
-}
-
-.jump-btn:hover {
-  background-color: var(--primary-color);
-  color: var(--text-white);
 }
 
 .modal-content h3 {

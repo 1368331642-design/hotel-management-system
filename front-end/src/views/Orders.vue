@@ -1,10 +1,7 @@
 <template>
   <div class="orders">
     <h2 class="page-title">我的订单</h2>
-    <div v-if="loading" class="loading">
-      <div class="loading-spinner"></div>
-      <p>加载中...</p>
-    </div>
+    <LoadingSpinner v-if="loading" variant="user" />
     <div v-else>
       <div v-if="orders.length === 0" class="empty">
         <p>暂无订单</p>
@@ -48,9 +45,9 @@
         </button>
         <div class="jump-page">
           <span>跳至</span>
-          <input type="number" v-model.number="jumpPage" @keyup.enter="handleJumpPage" min="1" :max="totalPages" class="form-input" />
+          <input type="number" v-model.number="jumpPage" @keyup.enter="handleJumpPage" min="1" :max="totalPages" />
           <span>页</span>
-          <button @click="handleJumpPage" class="btn btn-sm btn-outline">跳转</button>
+          <button @click="handleJumpPage" class="jump-btn">跳转</button>
         </div>
       </div>
     </div>
@@ -59,9 +56,13 @@
 
 <script>
 import axios from 'axios'
+import LoadingSpinner from '../components/LoadingSpinner.vue'
 
 export default {
   name: 'Orders',
+  components: {
+    LoadingSpinner
+  },
   data() {
     return {
       orders: [],
@@ -200,7 +201,6 @@ export default {
 .orders {
   max-width: 1200px;
   margin: 0 auto;
-  animation: fadeInUp var(--transition-slow);
 }
 
 .orders-list {
@@ -273,21 +273,6 @@ export default {
 .page-info {
   color: var(--text-secondary);
   font-size: 0.9rem;
-}
-
-.jump-page {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-left: 0.8rem;
-}
-
-.jump-page input {
-  width: 56px;
-  padding: 0.35rem 0.5rem;
-  text-align: center;
 }
 
 @media (max-width: 768px) {

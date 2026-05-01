@@ -44,7 +44,6 @@ export default {
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--transition);
   box-shadow: var(--shadow-sm);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -53,13 +52,6 @@ export default {
 .back-button:hover:not(.disabled) {
   background-color: var(--primary-color);
   color: var(--text-white);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.back-button:active:not(.disabled) {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm);
 }
 
 .back-button.disabled {

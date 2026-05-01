@@ -24,11 +24,9 @@
 
     <!-- 呼叫/反馈记录标签页 -->
     <div v-if="activeTab === 'history'" class="tab-content">
-      <div v-if="loading" class="loading">
-        <p>加载中...</p>
-      </div>
-      
-      <div v-else class="history-list">
+      <LoadingSpinner v-if="loading" variant="user" />
+       
+        <div v-else class="history-list">
         <div v-if="myServiceLogs.length === 0" class="empty">
           <p>暂无呼叫/反馈记录</p>
         </div>
@@ -150,8 +148,13 @@
 </template>
 
 <script>
+import LoadingSpinner from '../components/LoadingSpinner.vue'
+
 export default {
   name: 'FrontService',
+  components: {
+    LoadingSpinner
+  },
   data() {
     return {
       activeTab: 'service',
@@ -380,7 +383,6 @@ export default {
 .front-service {
   max-width: 1000px;
   margin: 0 auto;
-  animation: fadeInUp var(--transition-slow);
 }
 
 .tab-content {
@@ -404,32 +406,9 @@ export default {
   border-radius: var(--radius-lg);
   text-align: center;
   cursor: pointer;
-  transition: all var(--transition);
   border: 2px solid var(--border-light);
   position: relative;
   overflow: hidden;
-}
-
-.service-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--primary-gradient);
-  transform: scaleX(0);
-  transition: transform var(--transition);
-}
-
-.service-card:hover {
-  border-color: var(--primary-light);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-3px);
-}
-
-.service-card:hover::before {
-  transform: scaleX(1);
 }
 
 .service-icon {
@@ -468,12 +447,6 @@ export default {
   background-color: var(--bg-white);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
-  transition: all var(--transition);
-}
-
-.history-item:hover {
-  box-shadow: var(--shadow-sm);
-  border-color: var(--border-color);
 }
 
 .history-item:last-child {
@@ -525,7 +498,6 @@ export default {
 .rating-stars .star {
   font-size: 1.5rem;
   color: var(--border-color);
-  transition: all var(--transition-fast);
 }
 
 .rating-stars .star.filled {
@@ -578,13 +550,6 @@ export default {
   font-size: 2.5rem;
   color: var(--border-color);
   cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.star-rating .star:hover,
-.star-rating .star.hover {
-  color: var(--gold);
-  transform: scale(1.1);
 }
 
 .star-rating .star.filled {
@@ -611,7 +576,6 @@ export default {
   border: 1.5px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: 0.95rem;
-  transition: all var(--transition);
   background: var(--bg-white);
   color: var(--text-primary);
   box-sizing: border-box;

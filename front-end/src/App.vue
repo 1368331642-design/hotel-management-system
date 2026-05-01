@@ -1,7 +1,7 @@
 <template>
   <div class="app">
     <header class="header">
-      <h1>酒店管理系统</h1>
+      <h1>翻斗花园酒店</h1>
       <nav>
         <router-link to="/" v-if="!isAdmin">首页</router-link>
         <router-link to="/rooms" v-if="!isAdmin && !isFront">房间查询</router-link>
@@ -21,9 +21,7 @@
     <main class="main">
       <BackButton v-if="$route.path !== '/'" class="global-back-btn" />
       <router-view v-slot="{ Component, route }">
-        <transition name="page-fade" mode="out-in">
-          <component :is="Component" :key="route.path" />
-        </transition>
+        <component :is="Component" :key="route.path" />
       </router-view>
     </main>
     <footer class="footer">
@@ -166,7 +164,6 @@ nav a {
   text-decoration: none;
   padding: 0.5rem 0.9rem;
   border-radius: var(--radius-sm);
-  transition: all var(--transition);
   font-weight: 500;
   font-size: 0.9rem;
   opacity: 0.9;
@@ -176,7 +173,6 @@ nav a {
 nav a:hover {
   background-color: rgba(255, 255, 255, 0.18);
   opacity: 1;
-  transform: translateY(-1px);
 }
 
 nav a.router-link-active {
@@ -197,7 +193,6 @@ nav span {
   padding: 0.45rem 1rem;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all var(--transition);
   font-weight: 500;
   font-size: 0.9rem;
   backdrop-filter: blur(4px);
@@ -207,27 +202,11 @@ nav span {
 .logout-btn:hover {
   background-color: rgba(255, 255, 255, 0.28);
   border-color: rgba(255, 255, 255, 0.7);
-  transform: translateY(-1px);
 }
 
 .main {
   flex: 1;
   padding: 2rem;
-}
-
-/* ======= 页面切换过渡动画 ======= */
-.page-fade-enter-active {
-  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
-}
-.page-fade-leave-active {
-  transition: opacity 0.1s ease-in;
-}
-.page-fade-enter-from {
-  opacity: 0;
-  transform: translateY(16px);
-}
-.page-fade-leave-to {
-  opacity: 0;
 }
 
 .global-back-btn {

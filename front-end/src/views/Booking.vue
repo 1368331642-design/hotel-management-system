@@ -12,10 +12,7 @@
     </div>
 
     <template v-else>
-      <div v-if="loading" class="loading">
-        <div class="loading-spinner"></div>
-        <p>加载中...</p>
-      </div>
+      <LoadingSpinner v-if="loading" variant="user" />
 
       <div v-else class="booking-content">
       <form @submit.prevent="submitBooking">
@@ -188,9 +185,13 @@
 
 <script>
 import axios from 'axios'
+import LoadingSpinner from '../components/LoadingSpinner.vue'
 
 export default {
   name: 'Booking',
+  components: {
+    LoadingSpinner
+  },
   data() {
     return {
       loading: true,
@@ -857,13 +858,6 @@ export default {
   border-radius: var(--radius-md);
   padding: 1rem;
   cursor: pointer;
-  transition: all var(--transition);
-}
-
-.room-type-card:hover {
-  border-color: var(--primary-light);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
 }
 
 .room-type-card.active {
@@ -949,7 +943,6 @@ export default {
   border: 1.5px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: 0.95rem;
-  transition: all var(--transition);
   background: var(--bg-white);
   color: var(--text-primary);
 }
@@ -1003,16 +996,8 @@ export default {
   border: 2px solid var(--border-color);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all var(--transition);
   font-size: 0.95rem;
   font-weight: 500;
-}
-
-.room-item:hover {
-  border-color: var(--primary-color);
-  background-color: var(--status-info-bg);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
 }
 
 .room-item.active {
@@ -1135,7 +1120,6 @@ export default {
   border: 1.5px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: 0.95rem;
-  transition: all var(--transition);
   background: var(--bg-white);
   color: var(--text-primary);
   appearance: none;
@@ -1193,14 +1177,8 @@ export default {
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition);
   box-shadow: 0 4px 12px rgba(35, 133, 187, 0.25);
   text-decoration: none;
-}
-
-.login-prompt-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(35, 133, 187, 0.35);
 }
 
 .login-prompt-register {
@@ -1210,10 +1188,5 @@ export default {
   font-weight: 500;
   padding: 0.4rem 0.8rem;
   border-radius: var(--radius-sm);
-  transition: all var(--transition);
-}
-
-.login-prompt-register:hover {
-  background: rgba(35, 133, 187, 0.08);
 }
 </style>

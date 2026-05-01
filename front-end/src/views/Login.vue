@@ -86,18 +86,11 @@ export default {
           console.log('用户信息:', user)
           console.log('用户角色:', user.roles)
           
-          const frontRedirect = this.selectedLoginType === 'front'
-          
           sessionStorage.setItem('user', JSON.stringify(user))
           this.resetFormState()
           
-          let targetRoute = '/'
-          if (frontRedirect) {
-            targetRoute = '/front-desk'
-          }
-          console.log('跳转到:', targetRoute)
-          
-          this.$router.push(targetRoute).catch(err => {
+          console.log('跳转到: /')
+          this.$router.push('/').catch(err => {
             if (err.name !== 'NavigationDuplicated') {
               console.error('路由跳转异常:', err)
             }
@@ -159,37 +152,10 @@ export default {
   border-radius: var(--radius-xl);
   text-align: center;
   cursor: pointer;
-  transition: all var(--transition);
   border: 2px solid var(--border-light);
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
-}
-
-.login-type-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--primary-gradient);
-  transform: scaleX(0);
-  transition: transform var(--transition);
-}
-
-.login-type-card:hover {
-  transform: translateY(-8px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--primary-light);
-}
-
-.login-type-card:hover::before {
-  transform: scaleX(1);
-}
-
-.login-type-card:active {
-  transform: translateY(-4px);
 }
 
 .login-type-card .icon {
@@ -219,7 +185,6 @@ export default {
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   border: 1px solid var(--border-light);
-  animation: scaleIn var(--transition);
   position: relative;
   overflow: hidden;
 }
@@ -276,7 +241,6 @@ export default {
   border: 1.5px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: 1rem;
-  transition: all var(--transition);
   background: var(--bg-light);
 }
 
@@ -301,13 +265,7 @@ export default {
   font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition);
   box-shadow: 0 4px 16px rgba(35, 133, 187, 0.25);
-}
-
-.btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(35, 133, 187, 0.4);
 }
 
 .register-link {
@@ -321,7 +279,6 @@ export default {
   color: var(--primary-color);
   text-decoration: none;
   font-weight: 500;
-  transition: color var(--transition-fast);
 }
 
 .register-link a:hover {

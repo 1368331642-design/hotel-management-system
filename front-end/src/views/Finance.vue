@@ -1341,29 +1341,6 @@ export default {
   font-weight: bold;
 }
 
-.jump-page {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-.jump-page input {
-  width: 56px;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  text-align: center;
-  outline: none;
-  transition: all var(--transition);
-}
-
-.jump-page input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
-}
-
 @media (max-width: 768px) {
   .finance {
     padding: 0.5rem;

@@ -10,25 +10,9 @@
       </div>
     </div>
 
-    <div v-else-if="loading" class="loading">
-      <div class="skeleton-card">
-        <div class="skeleton skeleton-title"></div>
-        <div class="skeleton skeleton-line skeleton-line-long"></div>
-        <div class="skeleton skeleton-line skeleton-line-medium"></div>
-        <div class="skeleton skeleton-line skeleton-line-short"></div>
-      </div>
-      <div class="skeleton-card">
-        <div class="skeleton skeleton-title"></div>
-        <div class="skeleton skeleton-line skeleton-line-long"></div>
-        <div class="skeleton skeleton-line skeleton-line-medium"></div>
-        <div class="skeleton skeleton-line skeleton-line-short"></div>
-      </div>
-    </div>
+    <LoadingSpinner v-else-if="loading" variant="user" text="正在加载订单数据..." />
 
-    <div v-else-if="error" class="error">
-      <p>{{ error }}</p>
-      <button @click="getOrders" class="btn">重试</button>
-    </div>
+    <ErrorRetry v-else-if="error" :message="error" @retry="getOrders" />
 
     <div v-else-if="myOrders.length === 0" class="no-rooms">
       <div class="empty-icon">
@@ -146,9 +130,15 @@
 
 <script>
 import axios from 'axios'
+import LoadingSpinner from '../components/LoadingSpinner.vue'
+import ErrorRetry from '../components/ErrorRetry.vue'
 
 export default {
   name: 'Rooms',
+  components: {
+    LoadingSpinner,
+    ErrorRetry
+  },
   data() {
     return {
       isLoggedIn: false,
@@ -976,41 +966,12 @@ export default {
   font-weight: bold;
 }
 
-.jump-page {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-left: 0.8rem;
-}
-
-.jump-page input {
-  width: 56px;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  text-align: center;
-  outline: none;
-  transition: all var(--transition);
-}
-
-.jump-page input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
-}
-
 @media (max-width: 768px) {
   .pagination {
     flex-wrap: wrap;
     justify-content: center;
   }
-  
-  .jump-page {
-    margin-left: 0;
-    margin-top: 0.5rem;
-  }
-  
+
   .order-item {
     flex-direction: column;
     align-items: flex-start;

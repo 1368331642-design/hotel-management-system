@@ -352,9 +352,8 @@
         <button @click="serviceLogSubTab = 'userReview'" :class="{ active: serviceLogSubTab === 'userReview' }">用户评价</button>
       </div>
       
-      <div v-if="loadingServiceLogs" class="loading">
-        <p>加载中...</p>
-      </div>
+      <LoadingSpinner v-if="loadingServiceLogs" variant="admin" :skeleton-count="3" size="small" />
+      <ErrorRetry v-else-if="serviceLogsError" :message="serviceLogsError" @retry="getServiceLogs" />
       
       <!-- 前台服务子模块 -->
       <div v-else-if="serviceLogSubTab === 'frontService'" class="log-layout">
@@ -543,9 +542,15 @@
 <script>
 import axios from 'axios'
 import * as echarts from 'echarts'
+import LoadingSpinner from '../components/LoadingSpinner.vue'
+import ErrorRetry from '../components/ErrorRetry.vue'
 
 export default {
   name: 'Admin',
+  components: {
+    LoadingSpinner,
+    ErrorRetry
+  },
   data() {
     return {
       activeTab: 'systemConfig',
@@ -560,6 +565,7 @@ export default {
       serviceLogsTotalElements: 0,
       serviceLogsTotalPages: 0,
       loadingServiceLogs: false,
+      serviceLogsError: null,
       currentPage: 1,
       pageSize: 5,
       pendingCurrentPage: 1,
@@ -882,7 +888,7 @@ export default {
     },
     async getServiceLogs() {
       this.loadingServiceLogs = true
-      console.log('开始获取服务日志...')
+      this.serviceLogsError = null
       try {
         const [logsRes, reviewedRes] = await Promise.all([
           axios.get('/api/admin/service-logs', {
@@ -900,7 +906,7 @@ export default {
         this.reviewedLogs = reviewedRes.data.content
       } catch (error) {
         console.error('获取服务日志失败:', error)
-        alert('获取服务日志失败: ' + error.message)
+        this.serviceLogsError = '获取服务日志失败，请检查网络后重试'
       } finally {
         this.loadingServiceLogs = false
       }
@@ -2422,30 +2428,6 @@ export default {
 
 .viewer-download:hover {
   text-decoration: underline;
-}
-
-.jump-page {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-left: 0.8rem;
-}
-
-.jump-page input {
-  width: 56px;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  text-align: center;
-  outline: none;
-  transition: all var(--transition);
-}
-
-.jump-page input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
 }
 
 @media (max-width: 900px) {

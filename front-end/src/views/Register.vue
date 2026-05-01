@@ -142,7 +142,6 @@ export default {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border-light);
-  animation: fadeInUp var(--transition-slow);
 }
 
 .register h2 {
@@ -168,7 +167,6 @@ export default {
   border: 1.5px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: 1rem;
-  transition: all var(--transition);
 }
 
 .form-group input:focus {

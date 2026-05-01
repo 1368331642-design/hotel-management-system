@@ -1,16 +1,10 @@
 <template>
   <div class="room-status">
     <h2 class="page-title">实时房态</h2>
-    
-    <div v-if="loading" class="loading">
-      <div class="loading-spinner"></div>
-      <p>加载中...</p>
-    </div>
 
-    <div v-else-if="error" class="message error">
-      <p>{{ error }}</p>
-      <button @click="getRooms" class="btn btn-sm">重试</button>
-    </div>
+    <LoadingSpinner v-if="loading" variant="user" />
+
+    <ErrorRetry v-else-if="error" :message="error" @retry="getRooms" />
 
     <div v-else-if="rooms.length === 0" class="empty">
       <p>暂无房间数据</p>
@@ -29,8 +23,15 @@
 </template>
 
 <script>
+import LoadingSpinner from '../components/LoadingSpinner.vue'
+import ErrorRetry from '../components/ErrorRetry.vue'
+
 export default {
   name: 'RoomStatus',
+  components: {
+    LoadingSpinner,
+    ErrorRetry
+  },
   data() {
     return {
       loading: true,
@@ -102,7 +103,6 @@ export default {
 .room-status {
   max-width: 1200px;
   margin: 0 auto;
-  animation: fadeInUp var(--transition-slow);
 }
 
 .rooms-grid {
@@ -115,22 +115,6 @@ export default {
   text-align: center;
   position: relative;
   overflow: hidden;
-}
-
-.room-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--primary-gradient);
-  transform: scaleX(0);
-  transition: transform var(--transition);
-}
-
-.room-card:hover::before {
-  transform: scaleX(1);
 }
 
 .room-number {

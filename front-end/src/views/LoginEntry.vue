@@ -38,7 +38,6 @@ export default {
   max-width: 380px;
   width: 100%;
   border: 1px solid var(--border-light);
-  animation: scaleIn var(--transition);
   position: relative;
   overflow: hidden;
 }
@@ -57,7 +56,6 @@ export default {
   font-size: 4rem;
   margin-bottom: 1rem;
   display: inline-block;
-  animation: fadeInUp var(--transition-slow);
 }
 
 .login-entry-subtitle {
@@ -82,12 +80,6 @@ export default {
   font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition);
   box-shadow: 0 4px 16px rgba(35, 133, 187, 0.3);
-}
-
-.login-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(35, 133, 187, 0.4);
 }
 </style>
