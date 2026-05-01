@@ -15,7 +15,7 @@
     </div>
 
     <!-- 系统配置 -->
-    <div v-if="activeTab === 'systemConfig'" class="tab-content tab-pane-enter" :key="activeTab + '-' + systemConfigSubTab">
+    <div v-if="activeTab === 'systemConfig'" class="tab-content">
       <h3>系统配置</h3>
       <div class="service-log-tabs">
         <button @click="systemConfigSubTab = 'hotelInfo'" :class="{ active: systemConfigSubTab === 'hotelInfo' }">酒店信息</button>
@@ -250,7 +250,7 @@
     </div>
 
     <!-- 数据管理 -->
-    <div v-if="activeTab === 'dataManage'" class="tab-content tab-pane-enter" :key="activeTab + '-' + orderStatusTab">
+    <div v-if="activeTab === 'dataManage'" class="tab-content">
       <h3>数据管理</h3>
 
       <div class="config-section">
@@ -353,7 +353,7 @@
     </div>
 
     <!-- 服务日志 -->
-    <div v-if="activeTab === 'serviceLog'" class="tab-content tab-pane-enter" :key="activeTab + '-' + serviceLogSubTab">
+    <div v-if="activeTab === 'serviceLog'" class="tab-content">
       <div class="service-log-tabs">
         <button @click="serviceLogSubTab = 'frontService'" :class="{ active: serviceLogSubTab === 'frontService' }">前台服务</button>
         <button @click="serviceLogSubTab = 'userReview'" :class="{ active: serviceLogSubTab === 'userReview' }">用户评价</button>
@@ -1322,10 +1322,9 @@ export default {
       if (!this.chart) return
       
       const option = {
-        animation: true,
-        animationDuration: 800,
-        animationDurationUpdate: 300,
-        animationEasing: 'cubicOut',
+        animation: false,
+        animationDuration: 0,
+        animationDurationUpdate: 0,
         title: {
           text: '订单状态分布',
           left: 'center'
@@ -1451,10 +1450,9 @@ export default {
       }
       
       const option = {
-        animation: true,
-        animationDuration: 800,
-        animationDurationUpdate: 300,
-        animationEasing: 'cubicOut',
+        animation: false,
+        animationDuration: 0,
+        animationDurationUpdate: 0,
         title: {
           text: chartTitle,
           left: 'center'
@@ -1884,7 +1882,6 @@ export default {
   cursor: pointer;
   transition: all var(--transition);
   border: 2px solid var(--border-light);
-  border-left: 4px solid transparent;
   position: relative;
   overflow: hidden;
 }
@@ -1908,7 +1905,6 @@ export default {
   transform: translateY(-6px);
   box-shadow: var(--shadow-lg);
   border-color: var(--primary-light);
-  border-left-color: var(--primary-color);
 }
 
 .admin-card:hover::before {

@@ -18,7 +18,7 @@
     </div>
 
     <!-- 个人信息 -->
-    <div v-if="activeTab === 'personalInfo'" class="tab-content tab-pane-enter" :key="activeTab">
+    <div v-if="activeTab === 'personalInfo'" class="tab-content">
       <div class="info-header">
         <h3>个人信息</h3>
         <div class="header-actions">
@@ -72,14 +72,14 @@
     </div>
 
     <!-- 我的订单 -->
-    <div v-if="activeTab === 'orderHistory'" class="tab-content tab-pane-enter" :key="'order-' + activeTab">
+    <div v-if="activeTab === 'orderHistory'" class="tab-content">
       <h3>我的订单</h3>
       <div class="order-tabs">
         <button @click="orderTab = 'pending'" :class="{ active: orderTab === 'pending' }">待支付</button>
         <button @click="orderTab = 'current'" :class="{ active: orderTab === 'current' }">已支付</button>
         <button @click="orderTab = 'reviews'; loadMyReviews()" :class="{ active: orderTab === 'reviews' }">我的评价</button>
       </div>
-      <div v-if="orderTab === 'current'" class="sub-order-tabs tab-pane-enter" :key="'subtab-' + orderTab + '-' + subOrderTab">
+      <div v-if="orderTab === 'current'" class="sub-order-tabs">
         <button @click="subOrderTab = 'uncheckin'" :class="{ active: subOrderTab === 'uncheckin' }">未入住订单</button>
         <button @click="subOrderTab = 'checkedin'" :class="{ active: subOrderTab === 'checkedin' }">已入住订单</button>
         <button @click="subOrderTab = 'history'" :class="{ active: subOrderTab === 'history' }">历史订单</button>
@@ -95,7 +95,7 @@
         </template>
         <button v-else @click="toggleSelectAll" class="btn btn-sm btn-danger-outline">批量删除</button>
       </div>
-      <div v-if="orderTab !== 'reviews'" class="list tab-pane-enter" :key="'list-' + orderTab + '-' + subOrderTab">
+      <div v-if="orderTab !== 'reviews'" class="list">
         <div v-if="subOrderTab === 'history' && historyLoading" class="loading">
           <div class="loading-spinner"></div>
           <p>正在加载数据...</p>
@@ -182,7 +182,7 @@
       </div>
 
       <!-- 我的评价 -->
-      <div v-if="orderTab === 'reviews'" class="reviews-panel tab-pane-enter" :key="'reviews-' + activeTab">
+      <div v-if="orderTab === 'reviews'" class="reviews-panel">
         <div v-if="myReviews.length === 0 && !loadingReviews" class="empty">
           <p>暂无评价记录</p>
         </div>

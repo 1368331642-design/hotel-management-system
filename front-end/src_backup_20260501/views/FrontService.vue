@@ -7,7 +7,7 @@
     </div>
 
     <!-- 呼叫/反馈标签页 -->
-    <div v-if="activeTab === 'service'" class="tab-content tab-pane-enter" :key="'service-' + activeTab">
+    <div v-if="activeTab === 'service'" class="tab-content">
       <div class="service-options">
         <div class="service-card" @click="showCallForm = true">
           <div class="service-icon">📞</div>
@@ -23,7 +23,7 @@
     </div>
 
     <!-- 呼叫/反馈记录标签页 -->
-    <div v-if="activeTab === 'history'" class="tab-content tab-pane-enter" :key="'history-' + activeTab">
+    <div v-if="activeTab === 'history'" class="tab-content">
       <LoadingSpinner v-if="loading" variant="user" />
        
         <div v-else class="history-list">

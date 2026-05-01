@@ -743,10 +743,6 @@ select.form-input {
   animation: pageEnterSmooth var(--transition-slow) ease both;
 }
 
-.tab-pane-enter {
-  animation: pageEnterSmooth var(--transition-slow) ease both;
-}
-
 .list-stagger-enter {
   opacity: 0;
   animation: staggerCardEnter calc(360ms * var(--motion-scale)) cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
@@ -984,28 +980,4 @@ select.form-input {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* ================================================================
-   微交互增强 — 纯追加，不覆盖已有规则
-   ================================================================ */
-
-/* 表格行悬停高亮 */
-.table-container table tbody tr:hover td,
-table tbody tr:hover td {
-  background: var(--bg-hover);
-  transition: background var(--transition-fast);
-}
-
-/* 滚动条 hover 变色 */
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-light);
-}
-
-/* 空状态占位 */
-.empty-state {
-  text-align: center;
-  padding: 48px 16px;
-  color: var(--text-light);
-  font-size: 15px;
 }

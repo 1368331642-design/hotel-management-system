@@ -158,17 +158,6 @@ export default {
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
-  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
-}
-
-.login-type-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--shadow-primary-lg);
-  border-color: var(--primary-light);
-}
-
-.login-type-card:active {
-  transform: translateY(-2px);
 }
 
 .login-type-card .icon {
@@ -264,7 +253,7 @@ export default {
 .form-group input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px var(--primary-lighter);
+  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
   background: var(--bg-white);
 }
 
@@ -278,18 +267,7 @@ export default {
   font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: var(--shadow-primary);
-  transition: box-shadow var(--transition), transform var(--transition);
-}
-
-.btn:hover {
-  box-shadow: var(--shadow-primary-lg);
-  transform: translateY(-1px);
-}
-
-.btn:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 16px rgba(35, 133, 187, 0.25);
 }
 
 .register-link {

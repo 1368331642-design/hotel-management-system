@@ -20,4 +20,4 @@ build/
 
 # 系统垃圾文件
 Thumbs.db
-.DS_Store
+.DS_Store.workbuddy/

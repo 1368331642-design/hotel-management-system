@@ -81,7 +81,7 @@
             <h3>服务咨询</h3>
             <p>处理客户咨询和客房问题</p>
           </div>
-          <div class="feature" @click="goToFrontRoomStatus" style="cursor: pointer;">
+          <div class="feature" @click="goToFrontDesk" style="cursor: pointer;">
             <div class="feature-icon">🏠</div>
             <h3>客房状态</h3>
             <p>确认和更新客房状态</p>
@@ -140,18 +140,13 @@
               </div>
             </div>
           </div>
-          <div v-else class="empty-order-state">
-            <div class="empty-order-icon">🏨</div>
-            <p>暂无住房记录</p>
-            <button @click="goToBooking" class="btn">去预订房间</button>
-          </div>
           <div class="order-decoration">
           <svg viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="160" cy="100" r="130" fill="url(#deco-glow)" opacity="0.15" />
             <defs>
               <linearGradient id="deco-glow" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="var(--primary-dark, #2385BB)" stop-opacity="0.4" />
-                <stop offset="100%" stop-color="var(--gold, #E6A23C)" stop-opacity="0.1" />
+                <stop offset="0%" stop-color="#2385BB" stop-opacity="0.4" />
+                <stop offset="100%" stop-color="#E6A23C" stop-opacity="0.1" />
               </linearGradient>
             </defs>
             <rect x="84" y="58" width="152" height="120" rx="4" fill="#2385BB" fill-opacity="0.12" stroke="#2385BB" stroke-width="1.5" stroke-opacity="0.25" />
@@ -462,9 +457,6 @@ export default {
     goToFrontDesk() {
       this.$router.push('/front-desk')
     },
-    goToFrontRoomStatus() {
-      this.$router.push('/front-room-status')
-    },
     goToPayment(orderId) {
       // 跳转到支付页面
       this.$router.push(`/booking?orderId=${orderId}&pay=true`)
@@ -734,31 +726,6 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-}
-
-.empty-order-state {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--text-light);
-}
-
-.empty-order-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  opacity: 0.5;
-}
-
-.empty-order-state p {
-  font-size: 1rem;
-  margin-bottom: 1.2rem;
-  color: var(--text-light);
-}
-
-.empty-order-state .btn {
-  display: inline-block;
-  width: auto;
-  padding: 0.6rem 2rem;
-  font-size: 0.9rem;
 }
 
 .order-item {
@@ -1088,7 +1055,7 @@ export default {
 .hero {
   text-align: center;
   padding: 5rem 2rem;
-  background: var(--primary-soft-gradient);
+  background: var(--bg-white);
   border-radius: var(--radius-lg);
   margin-bottom: 2.5rem;
   border: 1px solid var(--border-light);
@@ -1097,35 +1064,9 @@ export default {
   overflow: hidden;
 }
 
-.hero::before {
-  content: '';
-  position: absolute;
-  width: 300px;
-  height: 300px;
-  top: -30%;
-  right: -5%;
-  background: radial-gradient(circle, rgba(91, 155, 213, 0.1) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
-  animation: heroFloat 8s ease-in-out infinite alternate;
-}
-
+.hero::before,
 .hero::after {
-  content: '';
-  position: absolute;
-  width: 250px;
-  height: 250px;
-  bottom: -25%;
-  left: -3%;
-  background: radial-gradient(circle, rgba(82, 196, 26, 0.06) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
-  animation: heroFloat 10s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes heroFloat {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(8px, -8px); }
+  display: none;
 }
 
 .hero h2 {

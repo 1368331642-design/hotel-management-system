@@ -610,10 +610,9 @@ export default {
       if (!this.lineChart) return
       
       const option = {
-        animation: true,
-        animationDuration: 800,
-        animationDurationUpdate: 300,
-        animationEasing: 'cubicOut',
+        animation: false,
+        animationDuration: 0,
+        animationDurationUpdate: 0,
         tooltip: {
           trigger: 'axis',
           formatter: function(params) {
@@ -688,10 +687,9 @@ export default {
       const colors = ['#5b9bd5', '#52c41a', '#faad14', '#ff4d4f', '#909399', '#00CED1', '#FF69B4']
       
       const option = {
-        animation: true,
-        animationDuration: 800,
-        animationDurationUpdate: 300,
-        animationEasing: 'cubicOut',
+        animation: false,
+        animationDuration: 0,
+        animationDurationUpdate: 0,
         tooltip: {
           trigger: 'item',
           formatter: function(params) {
@@ -775,10 +773,9 @@ export default {
       const { days, data } = this.getWindowData()
       
       const option = {
-        animation: true,
-        animationDuration: 800,
-        animationDurationUpdate: 300,
-        animationEasing: 'cubicOut',
+        animation: false,
+        animationDuration: 0,
+        animationDurationUpdate: 0,
         tooltip: {
           trigger: 'axis',
           axisPointer: {
@@ -948,10 +945,7 @@ export default {
 .stat-number {
   font-size: 2.2rem;
   font-weight: 700;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--primary-color);
 }
 
 .charts-section {
