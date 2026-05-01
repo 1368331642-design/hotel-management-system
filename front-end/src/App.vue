@@ -429,7 +429,7 @@ nav a.router-link-active {
 }
 
 .footer {
-  background: linear-gradient(135deg, #3d7cc4 0%, #5b9bd5 100%);
+  background: var(--bg-header);
   color: rgba(255,255,255,0.7);
   padding: 0.75rem;
   text-align: center;
