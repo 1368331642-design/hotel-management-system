@@ -429,6 +429,11 @@ export default {
   font-size: 0.95rem;
 }
 
+.service-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-xs);
+}
+
 .loading {
   text-align: center;
   padding: 2rem;
@@ -585,7 +590,7 @@ export default {
 .form-group select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
+  box-shadow: 0 0 0 3px rgba(91, 155, 213, 0.15);
 }
 
 .form-group textarea {

@@ -612,12 +612,12 @@ export default {
 }
 
 .login-prompt-banner {
-  background: linear-gradient(135deg, #e8f4fa 0%, #f0f7fd 100%);
-  border: 1px solid #c5e2f2;
+  background: var(--status-info-bg);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 1rem 1.5rem;
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
 }
 
 .login-prompt-content {
@@ -635,7 +635,7 @@ export default {
 
 .login-prompt-btn {
   padding: 0.5rem 1.5rem;
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   color: var(--text-white);
   border: none;
   border-radius: var(--radius-sm);
@@ -643,13 +643,12 @@ export default {
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition);
-  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.25);
+  box-shadow: var(--shadow-xs);
   text-decoration: none;
 }
 
 .login-prompt-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(35, 133, 187, 0.35);
+  box-shadow: var(--shadow-sm);
 }
 
 .login-prompt-register {
@@ -663,7 +662,7 @@ export default {
 }
 
 .login-prompt-register:hover {
-  background: rgba(35, 133, 187, 0.08);
+  background: var(--status-info-bg);
 }
 
 .error {
@@ -953,7 +952,7 @@ export default {
 }
 
 .page-number.active {
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   color: var(--text-white);
   border-color: var(--primary-color);
 }

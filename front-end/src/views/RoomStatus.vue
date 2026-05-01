@@ -142,11 +142,11 @@ export default {
   color: var(--primary-color);
 }
 
-.status-空闲 { border-left: 3px solid var(--status-success); }
-.status-已预订 { border-left: 3px solid var(--status-warning); }
-.status-已入住 { border-left: 3px solid var(--status-info); }
-.status-清洁中 { border-left: 3px solid var(--status-danger); }
-.status-维修中 { border-left: 3px solid var(--text-light); }
+.status-空闲 { border-left: 2px solid var(--status-success); }
+.status-已预订 { border-left: 2px solid var(--status-warning); }
+.status-已入住 { border-left: 2px solid var(--status-info); }
+.status-清洁中 { border-left: 2px solid var(--status-danger); }
+.status-维修中 { border-left: 2px solid var(--text-light); }
 
 .message.error {
   display: flex;

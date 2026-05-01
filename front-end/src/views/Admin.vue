@@ -1093,10 +1093,10 @@ export default {
               show: false
             },
             data: [
-              { value: this.statistics.totalBookings, name: '已预订', itemStyle: { color: '#2385bb' } },
-              { value: this.statistics.totalCancellations, name: '已取消', itemStyle: { color: '#f56c6c' } },
-              { value: this.statistics.totalCheckIn, name: '已入住', itemStyle: { color: '#e6a23c' } },
-              { value: this.statistics.totalCompleted, name: '已完成', itemStyle: { color: '#67c23a' } }
+              { value: this.statistics.totalBookings, name: '已预订', itemStyle: { color: '#5b9bd5' } },
+              { value: this.statistics.totalCancellations, name: '已取消', itemStyle: { color: '#ff4d4f' } },
+              { value: this.statistics.totalCheckIn, name: '已入住', itemStyle: { color: '#faad14' } },
+              { value: this.statistics.totalCompleted, name: '已完成', itemStyle: { color: '#52c41a' } }
             ]
           }
         ]
@@ -1168,15 +1168,15 @@ export default {
       
       const chartTitle = this.orderStatusTab === 'all' ? '近7天订单统计' : `近7天${this.orderStatusTab}统计`
       
-      let barColor = '#2385bb'
+      let barColor = '#5b9bd5'
       if (this.orderStatusTab === '已取消') {
-        barColor = '#f56c6c'
+        barColor = '#ff4d4f'
       } else if (this.orderStatusTab === '已入住') {
-        barColor = '#e6a23c'
+        barColor = '#faad14'
       } else if (this.orderStatusTab === '已完成') {
-        barColor = '#67c23a'
+        barColor = '#52c41a'
       } else if (this.orderStatusTab === '已预订') {
-        barColor = '#2385bb'
+        barColor = '#5b9bd5'
       }
       
       const option = {
@@ -1601,8 +1601,8 @@ export default {
   transition: transform var(--transition);
 }
 
-.admin-card:nth-child(1)::before { background: linear-gradient(90deg, #2385bb, #3a9fda); }
-.admin-card:nth-child(2)::before { background: linear-gradient(90deg, #7c3aed, #a855f7); }
+.admin-card:nth-child(1)::before { background: var(--primary-gradient); }
+.admin-card:nth-child(2)::before { background: var(--primary-gradient); }
 
 .admin-card:hover {
   transform: translateY(-6px);
@@ -1637,22 +1637,14 @@ export default {
   justify-content: center;
   font-size: 2rem;
   margin: 0 auto 1.2rem;
-  background: linear-gradient(135deg, #e8f4fa 0%, #d4eaf5 100%);
-  box-shadow: 0 4px 12px rgba(35,133,187,0.1);
+  background: var(--status-info-bg);
+  box-shadow: var(--shadow-xs);
   transition: all var(--transition);
-}
-
-.admin-card:nth-child(1) .card-icon {
-  background: linear-gradient(135deg, #e8f4fa 0%, #c5e2f2 100%);
-}
-
-.admin-card:nth-child(2) .card-icon {
-  background: linear-gradient(135deg, #f0e8fa 0%, #e0d0f5 100%);
 }
 
 .admin-card:hover .card-icon {
   transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(35,133,187,0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .admin-card h3 {
@@ -1667,25 +1659,11 @@ export default {
 }
 
 .tab-content {
-  background: linear-gradient(135deg, #fafcfd 0%, #f8fafc 100%);
+  background: var(--bg-white);
   padding: 2rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
-  box-shadow: var(--shadow-sm);
-  position: relative;
-  overflow: hidden;
-}
-
-.tab-content::before {
-  content: '';
-  position: absolute;
-  top: -80px;
-  right: -80px;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(35,133,187,0.04) 0%, transparent 70%);
-  pointer-events: none;
+  box-shadow: var(--shadow-xs);
 }
 
 .tab-content h3 {
@@ -1693,10 +1671,7 @@ export default {
   margin-bottom: 2rem;
   font-weight: 700;
   font-size: 1.5rem;
-  background: var(--gradient-text);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--primary-color);
 }
 
 .config-section {
@@ -1718,7 +1693,6 @@ export default {
   font-weight: 600;
   padding-left: 0.8rem;
   border-left: 4px solid var(--primary-color);
-  border-image: linear-gradient(180deg, var(--primary-color), var(--primary-light)) 1;
 }
 
 .config-section h5 {
@@ -1760,7 +1734,7 @@ export default {
 .form-group select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
+  box-shadow: 0 0 0 3px rgba(91, 155, 213, 0.12);
 }
 
 .btn-small {
@@ -1803,23 +1777,12 @@ export default {
   padding: 2rem 1.5rem;
   border-radius: var(--radius-lg);
   text-align: center;
+  background: var(--bg-white);
   border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-xs);
   transition: all var(--transition);
   position: relative;
   overflow: hidden;
-}
-
-.stat-card:nth-child(1) {
-  background: linear-gradient(135deg, #e8f4fa 0%, #f0f7fd 100%);
-}
-.stat-card:nth-child(2) {
-  background: linear-gradient(135deg, #fdf6ec 0%, #fef8f0 100%);
-}
-.stat-card:nth-child(3) {
-  background: linear-gradient(135deg, #ecfdf3 0%, #f0faf4 100%);
-}
-.stat-card:nth-child(4) {
-  background: linear-gradient(135deg, #f0e8fa 0%, #f5f0fb 100%);
 }
 
 .stat-card::before {
@@ -1831,10 +1794,11 @@ export default {
   height: 3px;
 }
 
-.stat-card:nth-child(1)::before { background: linear-gradient(90deg, #2385bb, #3a9fda); }
-.stat-card:nth-child(2)::before { background: linear-gradient(90deg, #e6a23c, #f0c76e); }
-.stat-card:nth-child(3)::before { background: linear-gradient(90deg, #67c23a, #85d65c); }
-.stat-card:nth-child(4)::before { background: linear-gradient(90deg, #7c3aed, #a855f7); }
+.stat-card:nth-child(1)::before { background: var(--primary-color); }
+.stat-card:nth-child(2)::before { background: var(--status-warning); }
+.stat-card:nth-child(3)::before { background: var(--status-success); }
+.stat-card:nth-child(4)::before { background: var(--primary-color); }
+.stat-card:nth-child(5)::before { background: var(--primary-color); }
 
 .stat-card:hover {
   box-shadow: var(--shadow-md);
@@ -1856,14 +1820,14 @@ export default {
 .stat-card:nth-child(1) .stat-number { color: var(--primary-color); }
 .stat-card:nth-child(2) .stat-number { color: var(--status-warning); }
 .stat-card:nth-child(3) .stat-number { color: var(--status-success); }
-.stat-card:nth-child(4) .stat-number { color: #7c3aed; }
+.stat-card:nth-child(4) .stat-number { color: var(--primary-color); }
 
 .chart-container {
   margin-top: 2rem;
   padding: 1.5rem;
   background-color: var(--bg-white);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
   border: 1px solid var(--border-light);
 }
 
@@ -2129,14 +2093,9 @@ export default {
   background-color: var(--bg-white);
   padding: 1.5rem;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
   border: 1px solid var(--border-light);
   margin-bottom: 1rem;
-  transition: border-color var(--transition);
-}
-
-.order-chart-container:hover {
-  border-color: var(--primary-light);
 }
 
 .chart-slider-wrapper {
@@ -2285,7 +2244,7 @@ export default {
 }
 
 .btn-confirm:hover {
-  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.35);
+  box-shadow: 0 4px 12px rgba(91, 155, 213, 0.25);
 }
 
 .review-display {

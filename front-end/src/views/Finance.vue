@@ -648,15 +648,15 @@ export default {
             smooth: true,
             data: this.monthlyData.map(item => item.revenue || 0),
             itemStyle: {
-              color: '#2385bb'
+              color: '#5b9bd5'
             },
             areaStyle: {
               color: {
                 type: 'linear',
                 x: 0, y: 0, x2: 0, y2: 1,
                 colorStops: [
-                  { offset: 0, color: 'rgba(35, 133, 187, 0.3)' },
-                  { offset: 1, color: 'rgba(35, 133, 187, 0.05)' }
+                  { offset: 0, color: 'rgba(91, 155, 213, 0.3)' },
+                  { offset: 1, color: 'rgba(91, 155, 213, 0.05)' }
                 ]
               }
             },
@@ -684,7 +684,7 @@ export default {
     updatePieChart() {
       if (!this.pieChart) return
       
-      const colors = ['#2385bb', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#00CED1', '#FF69B4']
+      const colors = ['#5b9bd5', '#52c41a', '#faad14', '#ff4d4f', '#909399', '#00CED1', '#FF69B4']
       
       const option = {
         animation: false,
@@ -813,7 +813,7 @@ export default {
             type: 'bar',
             data: data.map(d => d || 0),
             itemStyle: {
-              color: '#2385bb',
+              color: '#5b9bd5',
               borderRadius: [4, 4, 0, 0]
             },
             barWidth: '50%',
@@ -903,7 +903,7 @@ export default {
 }
 
 .refresh-btn:hover:not(:disabled) {
-  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.35);
+  box-shadow: 0 4px 12px rgba(91, 155, 213, 0.25);
   transform: translateY(-1px);
 }
 
@@ -924,7 +924,7 @@ export default {
   padding: 2rem;
   background-color: var(--bg-white);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
   text-align: center;
   transition: all var(--transition);
   border: 1px solid var(--border-light);
@@ -932,7 +932,7 @@ export default {
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .stat-card h5 {
@@ -959,7 +959,7 @@ export default {
   background-color: var(--bg-white);
   padding: 1.5rem;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
   border: 1px solid var(--border-light);
 }
 
@@ -974,7 +974,7 @@ export default {
   background-color: var(--bg-white);
   padding: 1.5rem;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
   border: 1px solid var(--border-light);
   margin-bottom: 2rem;
 }
@@ -994,7 +994,7 @@ export default {
   background-color: var(--bg-white);
   padding: 1rem 2rem 2rem;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
   border: 1px solid var(--border-light);
   margin-bottom: 1.5rem;
 }
@@ -1039,7 +1039,7 @@ export default {
   background-color: var(--bg-white);
   padding: 1.5rem;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
   border: 1px solid var(--border-light);
 }
 
@@ -1155,11 +1155,11 @@ export default {
 }
 
 .order-table tr.row-checked {
-  background-color: rgba(35, 133, 187, 0.05);
+  background-color: rgba(91, 155, 213, 0.05);
 }
 
 .order-table tr.row-checked:hover {
-  background-color: rgba(35, 133, 187, 0.1);
+  background-color: rgba(91, 155, 213, 0.1);
 }
 
 .order-table tr.row-cancelled {
@@ -1244,7 +1244,7 @@ export default {
 }
 
 .retry-btn:hover {
-  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.35);
+  box-shadow: 0 4px 12px rgba(91, 155, 213, 0.25);
   transform: translateY(-1px);
 }
 

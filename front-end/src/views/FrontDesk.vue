@@ -378,25 +378,11 @@ export default {
 }
 
 .tab-content {
-  background: linear-gradient(135deg, #fafcfd 0%, #f8fafc 100%);
+  background: var(--bg-white);
   padding: 2rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
-  box-shadow: var(--shadow-sm);
-  position: relative;
-  overflow: hidden;
-}
-
-.tab-content::before {
-  content: '';
-  position: absolute;
-  top: -60px;
-  right: -60px;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(35,133,187,0.04) 0%, transparent 70%);
-  pointer-events: none;
+  box-shadow: var(--shadow-xs);
 }
 
 .add-form {
@@ -430,7 +416,7 @@ export default {
 .form-group select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(35, 133, 187, 0.12);
+  box-shadow: 0 0 0 3px rgba(91, 155, 213, 0.15);
 }
 
 .list {
@@ -464,15 +450,13 @@ export default {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
   margin-bottom: 1rem;
-  background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+  background: var(--bg-white);
   transition: all var(--transition);
 }
 
 .item:hover {
-  box-shadow: var(--shadow-sm);
-  border-color: var(--primary-light);
-  background: linear-gradient(135deg, #f8fafc 0%, #f0f7fb 100%);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-xs);
+  border-color: var(--primary-color);
 }
 
 .item p {

@@ -619,7 +619,7 @@ export default {
 }
 
 .hotel-info {
-  background: linear-gradient(135deg, #f0f7fd 0%, #f8fafc 100%);
+  background: var(--bg-white);
   padding: 2.5rem 2rem;
   border-radius: var(--radius-lg);
   margin-top: 3rem;
@@ -630,41 +630,12 @@ export default {
   overflow: hidden;
 }
 
-.hotel-info::before {
-  content: '';
-  position: absolute;
-  top: -80px;
-  right: -80px;
-  width: 240px;
-  height: 240px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(35,133,187,0.06) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.hotel-info::after {
-  content: '';
-  position: absolute;
-  bottom: -60px;
-  left: -60px;
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(230,162,60,0.05) 0%, transparent 70%);
-  pointer-events: none;
-}
-
 .hotel-info h2 {
   text-align: center;
   margin-bottom: 1.2rem;
   font-size: 2rem;
   font-weight: 700;
-  background: var(--gradient-text);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  position: relative;
-  z-index: 1;
+  color: var(--text-primary);
 }
 
 .hotel-details {
@@ -696,7 +667,7 @@ export default {
 }
 
 .current-order {
-  background: linear-gradient(135deg, #fafcfd 0%, #f5f9fc 100%);
+  background: var(--bg-white);
   padding: 0.7rem 1rem;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
@@ -719,7 +690,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f8fafc 0%, #f5f9fc 50%, #fdf8f0 100%);
+  background: var(--bg-white);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
   overflow: hidden;
@@ -733,25 +704,15 @@ export default {
   height: auto;
 }
 
-.current-order::before {
-  content: '';
-  position: absolute;
-  top: -60px;
-  left: -60px;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(35,133,187,0.04) 0%, transparent 70%);
-  pointer-events: none;
-}
-
 .current-order-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.4rem;
-  position: relative;
-  z-index: 1;
+}
+
+.current-order::before {
+  display: none;
 }
 
 .order-count-badge {
@@ -760,7 +721,7 @@ export default {
   justify-content: center;
   min-width: 32px;
   padding: 0.1rem 0.5rem;
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  background: var(--primary-color);
   color: #fff;
   font-size: 0.72rem;
   font-weight: 600;
@@ -785,8 +746,8 @@ export default {
 }
 
 .order-item {
-  background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
-  border-radius: 6px;
+  background: var(--bg-white);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-light);
   cursor: pointer;
   user-select: none;
@@ -938,11 +899,6 @@ export default {
   border-top: 1px solid var(--border-light);
 }
 
-.countdown-expired {
-  color: var(--status-danger);
-  font-weight: 500;
-}
-
 .btn-checkout {
   background-color: var(--status-danger);
   color: var(--text-white);
@@ -1048,12 +1004,12 @@ export default {
 
 /* ======= 未登录提示横幅 ======= */
 .login-prompt-banner {
-  background: linear-gradient(135deg, #e8f4fa 0%, #f0f7fd 100%);
-  border: 1px solid #c5e2f2;
+  background: var(--status-info-bg);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 1rem 1.5rem;
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
 }
 
 .login-prompt-content {
@@ -1071,14 +1027,14 @@ export default {
 
 .login-prompt-btn {
   padding: 0.5rem 1.5rem;
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   color: var(--text-white);
   border: none;
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(35, 133, 187, 0.25);
+  box-shadow: var(--shadow-xs);
   text-decoration: none;
 }
 
@@ -1093,31 +1049,31 @@ export default {
 
 /* ======= 管理员端专属样式 ======= */
 .admin-home .features .feature:nth-child(1) .feature-icon {
-  background: linear-gradient(135deg, #e8f4fa 0%, #c5e2f2 100%);
+  background: var(--status-info-bg);
 }
 
 .admin-home .features .feature:nth-child(2) .feature-icon {
-  background: linear-gradient(135deg, #f0e8fa 0%, #e0d0f5 100%);
+  background: var(--status-info-bg);
 }
 
 .admin-home .features .feature:nth-child(3) .feature-icon {
-  background: linear-gradient(135deg, #fdf6ec 0%, #f5e6c8 100%);
+  background: var(--status-warning-bg);
 }
 
 .admin-home .features .feature:nth-child(4) .feature-icon {
-  background: linear-gradient(135deg, #ecfdf3 0%, #c8f0d8 100%);
+  background: var(--status-success-bg);
 }
 
 /* ======= 前台端专属样式 ======= */
 .front-home .features .feature .feature-icon {
-  background: linear-gradient(135deg, #e8f4fa 0%, #d4eaf5 100%);
+  background: var(--status-info-bg);
 }
 
 .hero {
   text-align: center;
   padding: 5rem 2rem;
-  background: linear-gradient(135deg, #e8f4fa 0%, #f8fafc 50%, #fdf6ec 100%);
-  border-radius: var(--radius-xl);
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
   margin-bottom: 2.5rem;
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
@@ -1125,40 +1081,18 @@ export default {
   overflow: hidden;
 }
 
-.hero::before {
-  content: '';
-  position: absolute;
-  width: 320px;
-  height: 320px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(35,133,187,0.07) 0%, transparent 70%);
-  top: -100px;
-  right: -80px;
-  pointer-events: none;
-}
-
+.hero::before,
 .hero::after {
-  content: '';
-  position: absolute;
-  width: 260px;
-  height: 260px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(230,162,60,0.06) 0%, transparent 70%);
-  bottom: -100px;
-  left: -80px;
-  pointer-events: none;
+  display: none;
 }
 
 .hero h2 {
   font-size: 2.4rem;
   margin-bottom: 1rem;
   font-weight: 700;
+  color: var(--text-primary);
   position: relative;
   z-index: 1;
-  background: var(--gradient-text);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .hero p {
@@ -1209,7 +1143,7 @@ export default {
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-color, #e0e8f0), transparent);
+  background: var(--border-color);
 }
 
 .features-section-label span {
@@ -1242,8 +1176,8 @@ export default {
   justify-content: center;
   font-size: 1.8rem;
   margin: 0 auto 1.2rem;
-  background: linear-gradient(135deg, #e8f4fa 0%, #d4eaf5 100%);
-  box-shadow: 0 4px 12px rgba(35,133,187,0.1);
+  background: var(--status-info-bg);
+  box-shadow: var(--shadow-xs);
   position: relative;
   z-index: 1;
 }
@@ -1287,7 +1221,7 @@ export default {
   border-radius: var(--radius-lg);
   width: 90%;
   max-width: 400px;
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--shadow-md);
 }
 
 .modal-content h3 {
@@ -1311,7 +1245,7 @@ export default {
 }
 
 .btn-confirm {
-  background: var(--primary-gradient) !important;
+  background: var(--primary-color) !important;
   color: var(--text-white) !important;
 }
 </style>
