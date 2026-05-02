@@ -26,7 +26,7 @@
 
     <header class="header" :class="{ 'header-scrolled': isHeaderScrolled }">
       <div class="header-inner">
-        <h1>🏨 翻斗花园酒店</h1>
+        <h1><SvgIcon name="hotel" size="1.2em" /> 翻斗花园酒店</h1>
         <nav>
           <router-link to="/" v-if="!isAdmin">首页</router-link>
           <router-link to="/rooms" v-if="!isAdmin && !isFront">房间查询</router-link>
@@ -40,7 +40,7 @@
           <router-link to="/admin" v-if="isAdmin">管理中心</router-link>
           <router-link to="/login" v-if="!isLoggedIn">登录</router-link>
           <router-link to="/register" v-if="!isLoggedIn && !isAdmin && !isFront">注册</router-link>
-          <span v-if="isLoggedIn" class="user-welcome">👋 {{ username }}</span>
+          <span v-if="isLoggedIn" class="user-welcome"><SvgIcon name="flower" size="1.1em" /> {{ username }}</span>
           <button v-if="isLoggedIn" @click="logout" class="logout-btn">退出</button>
         </nav>
       </div>
@@ -63,11 +63,13 @@
 
 <script>
 import BackButton from './components/BackButton.vue'
+import SvgIcon from './components/SvgIcon.vue'
 
 export default {
   name: 'App',
   components: {
-    BackButton
+    BackButton,
+    SvgIcon
   },
   computed: {
     isAuthLayout() {

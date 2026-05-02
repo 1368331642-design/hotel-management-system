@@ -10,12 +10,12 @@
     <div v-if="activeTab === 'service'" class="tab-content tab-pane-enter" :key="'service-' + activeTab">
       <div class="service-options">
         <div class="service-card" @click="showCallForm = true">
-          <div class="service-icon">📞</div>
+          <div class="service-icon"><SvgIcon name="bell" size="3rem" /></div>
           <h3>呼叫前台</h3>
           <p>需要前台协助？点击呼叫前台</p>
         </div>
         <div class="service-card" @click="showFeedbackForm = true">
-          <div class="service-icon">📝</div>
+          <div class="service-icon"><SvgIcon name="pencil" size="3rem" /></div>
           <h3>问题反馈</h3>
           <p>有任何问题或建议？提交反馈</p>
         </div>
@@ -156,11 +156,13 @@
 
 <script>
 import LoadingSpinner from '../components/LoadingSpinner.vue'
+import SvgIcon from '../components/SvgIcon.vue'
 
 export default {
   name: 'FrontService',
   components: {
-    LoadingSpinner
+    LoadingSpinner,
+    SvgIcon
   },
   data() {
     return {

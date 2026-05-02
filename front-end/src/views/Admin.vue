@@ -3,12 +3,12 @@
     
     <div v-if="activeTab !== 'serviceLog'" class="admin-cards">
       <div class="admin-card" @click="activeTab = 'systemConfig'" :class="{ active: activeTab === 'systemConfig' }">
-        <div class="card-icon">⚙️</div>
+        <div class="card-icon"><SvgIcon name="gear" size="2rem" /></div>
         <h3>系统配置</h3>
         <p>酒店基础信息、客房资源管理</p>
       </div>
       <div class="admin-card" @click="activeTab = 'dataManage'" :class="{ active: activeTab === 'dataManage' }">
-        <div class="card-icon">📊</div>
+        <div class="card-icon"><SvgIcon name="bar-chart" size="2rem" /></div>
         <h3>数据管理</h3>
         <p>预订数据统计、订单管理</p>
       </div>
@@ -720,12 +720,14 @@ import axios from 'axios'
 import * as echarts from 'echarts'
 import LoadingSpinner from '../components/LoadingSpinner.vue'
 import ErrorRetry from '../components/ErrorRetry.vue'
+import SvgIcon from '../components/SvgIcon.vue'
 
 export default {
   name: 'Admin',
   components: {
     LoadingSpinner,
-    ErrorRetry
+    ErrorRetry,
+    SvgIcon
   },
   data() {
     return {

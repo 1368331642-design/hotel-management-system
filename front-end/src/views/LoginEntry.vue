@@ -1,7 +1,7 @@
 <template>
   <div class="login-entry">
     <div class="login-entry-container">
-      <div class="login-entry-icon">🏨</div>
+      <div class="login-entry-icon"><SvgIcon name="hotel" size="4rem" /></div>
       <h3 class="login-entry-subtitle">欢迎光临翻斗花园酒店</h3>
       <p class="login-entry-description">请登录以继续</p>
       <button @click="goToLogin" class="login-btn">登录系统</button>
@@ -10,8 +10,13 @@
 </template>
 
 <script>
+import SvgIcon from '../components/SvgIcon.vue'
+
 export default {
   name: 'LoginEntry',
+  components: {
+    SvgIcon
+  },
   methods: {
     goToLogin() {
       this.$router.push('/login/select')

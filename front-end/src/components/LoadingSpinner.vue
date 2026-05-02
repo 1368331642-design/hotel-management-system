@@ -22,7 +22,7 @@
     <!-- 前台端：呼吸灯 + 文字轮换 -->
     <template v-else-if="variant === 'frontdesk'">
       <div class="breathe-card">
-        <div class="breathe-icon">🏨</div>
+        <div class="breathe-icon"><SvgIcon name="hourglass" size="3rem" /></div>
         <p class="breathe-text">{{ rotatingText }}</p>
       </div>
     </template>
@@ -50,8 +50,13 @@
 </template>
 
 <script>
+import SvgIcon from './SvgIcon.vue'
+
 export default {
   name: 'LoadingSpinner',
+  components: {
+    SvgIcon
+  },
   props: {
     variant: {
       type: String,

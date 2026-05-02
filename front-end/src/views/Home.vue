@@ -12,7 +12,7 @@
 
       <div class="hero">
         <h2>欢迎光临翻斗花园酒店</h2>
-        <p>为您提供便捷、高效的酒店预订和管理服务</p>
+        <p>{{ hotelInfo?.description || '为您提供便捷、高效的酒店预订和管理服务' }}</p>
         <div class="buttons">
           <button @click="goToBooking" class="btn">去订房</button>
           <button @click="goToRooms" class="btn btn-outline">我的房间</button>
@@ -20,22 +20,22 @@
       </div>
       <div class="features">
         <div class="feature" @click="goToBooking" style="cursor: pointer;">
-          <div class="feature-icon">📅</div>
+          <div class="feature-icon"><SvgIcon name="calendar" /></div>
           <h3>在线预订</h3>
           <p>便捷的在线预订系统，让您随时随地预订心仪的房间</p>
         </div>
         <div class="feature" @click="goToRoomStatus" style="cursor: pointer;">
-          <div class="feature-icon">🏨</div>
+          <div class="feature-icon"><SvgIcon name="bed" /></div>
           <h3>房间查询</h3>
           <p>实时查看房间状态，确保您能预订到可用的房间</p>
         </div>
         <div class="feature" @click="goToFrontService" style="cursor: pointer;">
-          <div class="feature-icon">💬</div>
+          <div class="feature-icon"><SvgIcon name="headset" /></div>
           <h3>前台服务</h3>
           <p>呼叫前台和问题反馈，及时解决您的需求</p>
         </div>
         <div class="feature" @click="goToProfile" style="cursor: pointer;">
-          <div class="feature-icon">📋</div>
+          <div class="feature-icon"><SvgIcon name="clipboard" /></div>
           <h3>订单管理</h3>
           <p>方便的订单管理功能，随时查看和管理您的预订</p>
         </div>
@@ -52,17 +52,17 @@
         </div>
         <div class="features">
           <div class="feature" @click="goToAdmin" style="cursor: pointer;">
-            <div class="feature-icon">🛠️</div>
+            <div class="feature-icon"><SvgIcon name="wrench" /></div>
             <h3>管理中心</h3>
             <p>系统配置和数据管理</p>
           </div>
           <div class="feature" @click="goToFinance" style="cursor: pointer;">
-            <div class="feature-icon">💰</div>
+            <div class="feature-icon"><SvgIcon name="chart-up" /></div>
             <h3>财务统计</h3>
             <p>财务报表和营收数据分析</p>
           </div>
           <div class="feature" @click="goToServiceLogs" style="cursor: pointer;">
-            <div class="feature-icon">📋</div>
+            <div class="feature-icon"><SvgIcon name="document" /></div>
             <h3>服务日志</h3>
             <p>前台服务和用户评价管理</p>
           </div>
@@ -77,12 +77,12 @@
         </div>
         <div class="features">
           <div class="feature" @click="goToFrontDesk" style="cursor: pointer;">
-            <div class="feature-icon">💬</div>
+            <div class="feature-icon"><SvgIcon name="headset" /></div>
             <h3>服务咨询</h3>
             <p>处理客户咨询和客房问题</p>
           </div>
           <div class="feature" @click="goToFrontRoomStatus" style="cursor: pointer;">
-            <div class="feature-icon">🏠</div>
+            <div class="feature-icon"><SvgIcon name="house" /></div>
             <h3>客房状态</h3>
             <p>确认和更新客房状态</p>
           </div>
@@ -93,7 +93,7 @@
       <div v-else class="user-home">
         <div class="hero">
           <h2>欢迎光临翻斗花园酒店</h2>
-          <p>为您提供便捷、高效的酒店预订和管理服务</p>
+          <p>{{ hotelInfo?.description || '为您提供便捷、高效的酒店预订和管理服务' }}</p>
           <div class="buttons">
             <button @click="goToBooking" class="btn">去订房</button>
             <button @click="goToRooms" class="btn btn-outline">我的房间</button>
@@ -141,7 +141,7 @@
             </div>
           </div>
           <div v-else class="empty-order-state">
-            <div class="empty-order-icon">🏨</div>
+            <div class="empty-order-icon"><SvgIcon name="suitcase" size="3rem" /></div>
             <p>暂无住房记录</p>
             <button @click="goToBooking" class="btn">去预订房间</button>
           </div>
@@ -189,22 +189,22 @@
         </div>
         <div class="features">
           <div class="feature" @click="goToBooking" style="cursor: pointer;">
-            <div class="feature-icon">📅</div>
+            <div class="feature-icon"><SvgIcon name="calendar" /></div>
             <h3>在线预订</h3>
             <p>便捷的在线预订系统，让您随时随地预订心仪的房间</p>
           </div>
           <div class="feature" @click="goToRoomStatus" style="cursor: pointer;">
-            <div class="feature-icon">🏨</div>
+            <div class="feature-icon"><SvgIcon name="bed" /></div>
             <h3>房间查询</h3>
             <p>实时查看房间状态，确保您能预订到可用的房间</p>
           </div>
           <div class="feature" @click="goToFrontService" style="cursor: pointer;">
-            <div class="feature-icon">💬</div>
+            <div class="feature-icon"><SvgIcon name="headset" /></div>
             <h3>前台服务</h3>
             <p>呼叫前台和问题反馈，及时解决您的需求</p>
           </div>
           <div class="feature" @click="goToProfile" style="cursor: pointer;">
-            <div class="feature-icon">📋</div>
+            <div class="feature-icon"><SvgIcon name="clipboard" /></div>
             <h3>订单管理</h3>
             <p>方便的订单管理功能，随时查看和管理您的预订</p>
           </div>
@@ -216,15 +216,15 @@
     <div v-if="hotelInfo && !isAdmin && !isFront" class="hotel-info">
       <div class="hotel-details">
         <div class="hotel-detail">
-          <span class="icon">📍</span>
+          <span class="icon"><SvgIcon name="pin" size="1.3em" /></span>
           <span>{{ hotelInfo.address }}</span>
         </div>
         <div class="hotel-detail">
-          <span class="icon">📞</span>
+          <span class="icon"><SvgIcon name="phone" size="1.3em" /></span>
           <span>{{ hotelInfo.phone }}</span>
         </div>
         <div class="hotel-detail">
-          <span class="icon">📧</span>
+          <span class="icon"><SvgIcon name="envelope" size="1.3em" /></span>
           <span>{{ hotelInfo.email }}</span>
         </div>
       </div>
@@ -261,9 +261,13 @@
 
 <script>
 import axios from 'axios'
+import SvgIcon from '../components/SvgIcon.vue'
 
 export default {
   name: 'Home',
+  components: {
+    SvgIcon
+  },
   data() {
     return {
       isLoggedIn: false,

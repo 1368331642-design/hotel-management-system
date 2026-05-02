@@ -147,7 +147,7 @@
       </div>
 
       <!-- 历史订单分页 -->
-      <div v-if="subOrderTab === 'history' && historyTotalElements > 0" class="pagination-wrapper">
+      <div v-if="orderTab !== 'reviews' && subOrderTab === 'history' && historyTotalElements > 0" class="pagination-wrapper">
         <div class="pagination-top-row">
           <div class="pagination-info">
             共 {{ historyTotalElements }} 条记录，第 {{ historyCurrentPage }} / {{ historyTotalPages }} 页·每页 5 条
@@ -192,7 +192,7 @@
           <p>加载中...</p>
         </div>
         <div v-else class="reviews-list">
-          <div v-for="review in myReviews" :key="review.id" class="review-card">
+          <div v-for="review in paginatedReviews" :key="review.id" class="review-card">
             <div class="review-card-header">
               <span class="review-type-badge">订单评价</span>
               <span class="review-time">{{ formatDate(review.createTime) }}</span>
@@ -212,6 +212,37 @@
               <img v-for="(img, idx) in parseReviewImages(review.images)" :key="idx"
                 :src="img" alt="评价图片" class="review-thumb" />
             </div>
+          </div>
+        </div>
+
+        <!-- 评价分页 -->
+        <div v-if="myReviews.length > reviewPageSize" class="reviews-pagination-wrapper">
+          <div class="pagination-info">
+            共 {{ myReviews.length }} 条评价，第 {{ reviewCurrentPage }} / {{ reviewTotalPages }} 页·每页 {{ reviewPageSize }} 条
+          </div>
+          <div class="pagination">
+            <button @click="reviewGoToPage(1)" :disabled="!reviewHasPrevPage" class="page-btn" title="第一页">«</button>
+            <button @click="reviewGoToPrevPage" :disabled="!reviewHasPrevPage" class="page-btn">上一页</button>
+            <div class="page-numbers">
+              <template v-for="(page, idx) in reviewVisiblePages" :key="idx">
+                <span v-if="page === -1" class="ellipsis">...</span>
+                <button
+                  v-else
+                  @click="reviewGoToPage(page)"
+                  :class="['page-number', { active: reviewCurrentPage === page }]"
+                >
+                  {{ page }}
+                </button>
+              </template>
+            </div>
+            <button @click="reviewGoToNextPage" :disabled="!reviewHasNextPage" class="page-btn">下一页</button>
+            <button @click="reviewGoToPage(reviewTotalPages)" :disabled="!reviewHasNextPage" class="page-btn" title="最后一页">»</button>
+          </div>
+          <div class="jump-page">
+            <span>跳至</span>
+            <input type="number" v-model.number="reviewJumpPage" @keyup.enter="reviewHandleJumpPage" min="1" :max="reviewTotalPages" />
+            <span>页</span>
+            <button @click="reviewHandleJumpPage" class="jump-btn">跳转</button>
           </div>
         </div>
       </div>
@@ -408,7 +439,11 @@ export default {
       uploadError: '',
       // 我的评价
       myReviews: [],
-      loadingReviews: false
+      loadingReviews: false,
+      // 评价分页
+      reviewCurrentPage: 1,
+      reviewPageSize: 5,
+      reviewJumpPage: 1
     }
   },
   watch: {
@@ -417,6 +452,12 @@ export default {
         this.loadMyReviews()
         this.historyCurrentPage = 1
         this.historyJumpPage = 1
+      }
+    },
+    orderTab(val) {
+      if (val === 'reviews') {
+        this.reviewCurrentPage = 1
+        this.reviewJumpPage = 1
       }
     }
   },
@@ -499,6 +540,40 @@ export default {
         pages.push(this.historyTotalPages)
       }
 
+      return pages
+    },
+    // 评价分页
+    reviewTotalPages() {
+      return Math.ceil(this.myReviews.length / this.reviewPageSize) || 1
+    },
+    paginatedReviews() {
+      const totalPages = this.reviewTotalPages
+      if (this.reviewCurrentPage > totalPages) {
+        this.reviewCurrentPage = Math.max(1, totalPages)
+      }
+      const start = (this.reviewCurrentPage - 1) * this.reviewPageSize
+      const end = start + this.reviewPageSize
+      return this.myReviews.slice(start, end)
+    },
+    reviewHasPrevPage() {
+      return this.reviewCurrentPage > 1
+    },
+    reviewHasNextPage() {
+      return this.reviewCurrentPage < this.reviewTotalPages
+    },
+    reviewVisiblePages() {
+      const pages = []
+      let start = Math.max(1, this.reviewCurrentPage - 2)
+      let end = Math.min(this.reviewTotalPages, this.reviewCurrentPage + 2)
+      if (start > 1) {
+        pages.push(1)
+        if (start > 2) pages.push(-1)
+      }
+      for (let i = start; i <= end; i++) pages.push(i)
+      if (end < this.reviewTotalPages) {
+        if (end < this.reviewTotalPages - 1) pages.push(-1)
+        pages.push(this.reviewTotalPages)
+      }
       return pages
     }
   },
@@ -1109,6 +1184,8 @@ export default {
     // 加载我的订单评价
     async loadMyReviews() {
       this.loadingReviews = true
+      this.reviewCurrentPage = 1
+      this.reviewJumpPage = 1
       try {
         const userStr = sessionStorage.getItem('user')
         const user = userStr ? JSON.parse(userStr) : null
@@ -1135,6 +1212,26 @@ export default {
     parseReviewImages(images) {
       if (!images) return []
       try { return JSON.parse(images) } catch (e) { return [] }
+    },
+    // 评价分页方法
+    reviewGoToPage(page) {
+      if (page < 1 || page > this.reviewTotalPages) return
+      this.reviewCurrentPage = page
+      this.reviewJumpPage = page
+    },
+    reviewGoToPrevPage() {
+      if (this.reviewHasPrevPage) this.reviewGoToPage(this.reviewCurrentPage - 1)
+    },
+    reviewGoToNextPage() {
+      if (this.reviewHasNextPage) this.reviewGoToPage(this.reviewCurrentPage + 1)
+    },
+    reviewHandleJumpPage() {
+      const page = parseInt(this.reviewJumpPage)
+      if (isNaN(page) || page < 1 || page > this.reviewTotalPages) {
+        this.reviewJumpPage = this.reviewCurrentPage
+        return
+      }
+      this.reviewGoToPage(page)
     }
   }
 }
@@ -1792,6 +1889,55 @@ export default {
   display: flex;
   align-items: center;
   font-weight: bold;
+}
+
+.reviews-pagination-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.jump-page {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+.jump-page input {
+  width: 52px;
+  padding: 0.35rem 0.4rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  text-align: center;
+  transition: border-color var(--transition);
+}
+
+.jump-page input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(35, 133, 187, 0.12);
+}
+
+.jump-btn {
+  padding: 0.35rem 0.8rem;
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all var(--transition);
+}
+
+.jump-btn:hover {
+  background-color: var(--primary-hover);
 }
 
 .modal-content h3 {

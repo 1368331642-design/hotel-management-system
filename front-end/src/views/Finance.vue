@@ -5,7 +5,7 @@
         <span class="last-update">最后更新: {{ lastUpdateTime }}</span>
         <button @click="refreshAllData" :disabled="refreshing" class="refresh-btn">
           <span v-if="refreshing">刷新中...</span>
-          <span v-else>🔄 刷新数据</span>
+          <span v-else><SvgIcon name="refresh" size="1em" /> 刷新数据</span>
         </button>
       </div>
     </div>
@@ -213,9 +213,13 @@
 <script>
 import axios from 'axios'
 import * as echarts from 'echarts'
+import SvgIcon from '../components/SvgIcon.vue'
 
 export default {
   name: 'Finance',
+  components: {
+    SvgIcon
+  },
   data() {
     return {
       summary: {

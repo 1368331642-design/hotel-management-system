@@ -1,6 +1,6 @@
 <template>
   <div class="retry-container" role="alert">
-    <div class="retry-icon">⚠️</div>
+    <div class="retry-icon"><SvgIcon name="alert" size="3rem" /></div>
     <p class="retry-text">{{ message }}</p>
     <button class="retry-btn" @click="handleRetry" :disabled="retrying">
       {{ retrying ? '重试中...' : '重新加载' }}
@@ -9,8 +9,13 @@
 </template>
 
 <script>
+import SvgIcon from './SvgIcon.vue'
+
 export default {
   name: 'ErrorRetry',
+  components: {
+    SvgIcon
+  },
   props: {
     message: {
       type: String,

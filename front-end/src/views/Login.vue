@@ -3,18 +3,18 @@
     <div v-if="!showLoginForm" class="login-type-select">
       <div class="login-types">
         <div class="login-type-card" @click="selectLoginType('admin')">
-          <div class="icon">👨‍💼</div>
+          <div class="icon"><SvgIcon name="shield" size="3.5rem" /></div>
           <h3>管理员登录</h3>
           <p>系统管理和数据统计</p>
         </div>
         <div class="login-type-card" @click="selectLoginType('front')">
-          <div class="icon">👨‍💻</div>
+          <div class="icon"><SvgIcon name="monitor" size="3.5rem" /></div>
           <h3>前台登录</h3>
           <p>客房服务和状态管理</p>
         </div>
         <div class="login-type-card" @click="selectLoginType('user')">
-          <div class="icon">👤</div>
-          <h3>客户登录</h3>
+          <div class="icon"><SvgIcon name="person" size="3.5rem" /></div>
+          <h3>用户登录</h3>
           <p>客房预订和订单管理</p>
         </div>
       </div>
@@ -41,9 +41,13 @@
 
 <script>
 import axios from 'axios'
+import SvgIcon from '../components/SvgIcon.vue'
 
 export default {
   name: 'Login',
+  components: {
+    SvgIcon
+  },
   data() {
     return {
       showLoginForm: false,
@@ -71,7 +75,7 @@ export default {
       const titles = {
         admin: '管理员登录',
         front: '前台登录',
-        user: '客户登录'
+        user: '用户登录'
       }
       return titles[this.selectedLoginType] || '用户登录'
     },
