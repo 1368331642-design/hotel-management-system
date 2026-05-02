@@ -88,12 +88,13 @@ export default {
     },
     getRoomStatusClass(status) {
       switch (status) {
-        case '空闲': return 'status-success'
-        case '已预订': return 'status-warning'
+        case '空房': return 'status-success'
+        case '已预订':
+        case '已支付': return 'status-warning'
         case '已入住': return 'status-info'
-        case '清洁中': return 'status-danger'
-        case '维修中': return 'status-expired'
-        default: return ''
+        case '已完成': return 'status-warning'
+        case '维护中': return 'status-danger'
+        default: return 'status-info'
       }
     }
   }
@@ -143,11 +144,12 @@ export default {
   color: var(--primary-color);
 }
 
-.status-空闲 { border-left: 2px solid var(--status-success); }
+.status-空房 { border-left: 2px solid var(--status-success); }
 .status-已预订 { border-left: 2px solid var(--status-warning); }
 .status-已入住 { border-left: 2px solid var(--status-info); }
-.status-清洁中 { border-left: 2px solid var(--status-danger); }
-.status-维修中 { border-left: 2px solid var(--text-light); }
+.status-已支付 { border-left: 2px solid var(--status-warning); }
+.status-已完成 { border-left: 2px solid var(--status-warning); }
+.status-维护中 { border-left: 2px solid var(--status-danger); }
 
 .message.error {
   display: flex;

@@ -254,7 +254,16 @@
       <h3 class="section-title">数据管理</h3>
 
       <div class="config-section">
-        <h4>数据统计</h4>
+        <h4>订单统计</h4>
+        <div class="time-range-selector">
+          <button @click="timeRange = 'today'" :class="{ active: timeRange === 'today' }">今日</button>
+          <button @click="timeRange = 'week'" :class="{ active: timeRange === 'week' }">本周</button>
+          <button @click="timeRange = 'month'" :class="{ active: timeRange === 'month' }">本月</button>
+        </div>
+        <div v-if="chartLoading" class="chart-loading">
+          <div class="loading-spinner"></div>
+          <span>加载中...</span>
+        </div>
         <div class="statistics">
           <div class="stat-card">
             <h5>总订单</h5>
@@ -793,6 +802,8 @@ export default {
       refreshInterval: null,
       chart: null,
       orderChart: null,
+      timeRange: 'today',
+      chartLoading: false,
       // 滑块相关（30天数据，7天窗口）
       sliderValue: 23,
       windowSize: 7,
@@ -1065,10 +1076,14 @@ export default {
         }
       })
     },
+    timeRange() {
+      this.$nextTick(() => {
+        this.updateStatisticsByTimeRange()
+      })
+    },
     activeTab(newVal) {
       if (newVal === 'dataManage') {
         this.getOrders()
-        this.getStatistics()
         this.$nextTick(() => {
           this.initChart()
           this.initOrderChart()
@@ -1328,6 +1343,7 @@ export default {
       this.roomStatusCurrentPage = 1
       this.roomStatusJumpPage = 1
       try {
+        await axios.post('/api/user/admin/rooms/sync-status', {}, { withCredentials: true }).catch(() => {})
         const [roomsRes, ordersRes] = await Promise.all([
           axios.get('/api/user/rooms', {
             params: { page: 0, size: 200 },
@@ -1475,6 +1491,42 @@ export default {
       } catch (error) {
         console.error('获取统计数据失败:', error)
       }
+    },
+    updateStatisticsByTimeRange() {
+      if (!this.allOrders || this.allOrders.length === 0) return
+      const now = new Date()
+      let startTime = new Date()
+      switch (this.timeRange) {
+        case 'today':
+          startTime.setHours(0, 0, 0, 0)
+          break
+        case 'week':
+          const dayOfWeek = now.getDay() || 7
+          startTime.setDate(now.getDate() - dayOfWeek + 1)
+          startTime.setHours(0, 0, 0, 0)
+          break
+        case 'month':
+          startTime.setDate(1)
+          startTime.setHours(0, 0, 0, 0)
+          break
+        default:
+          startTime = null
+      }
+      const filteredOrders = startTime ? this.allOrders.filter(order => {
+        const orderDate = new Date(order.createTime || order.checkInTime)
+        return orderDate >= startTime && orderDate <= now
+      }) : this.allOrders
+      const stats = {
+        totalOrders: filteredOrders.length,
+        totalBookings: filteredOrders.filter(o => o.status === '已预订' || o.status === '已支付').length,
+        totalCancellations: filteredOrders.filter(o => o.status === '已取消').length,
+        totalCheckIn: filteredOrders.filter(o => o.status === '已入住').length,
+        totalCompleted: filteredOrders.filter(o => o.status === '已完成' || o.status === '已退房' || o.status === '自动退房').length
+      }
+      this.statistics = stats
+      this.$nextTick(() => {
+        this.updateChart()
+      })
     },
     initChart() {
       const chartDom = this.$refs.chartRef
@@ -1742,6 +1794,7 @@ export default {
         
         this.$nextTick(() => {
           this.updateOrderChart()
+          this.updateStatisticsByTimeRange()
         })
       } catch (error) {
         console.error('获取订单失败:', error)
@@ -2299,6 +2352,64 @@ export default {
 .stat-card:nth-child(2) .stat-number { color: var(--status-warning); }
 .stat-card:nth-child(3) .stat-number { color: var(--status-success); }
 .stat-card:nth-child(4) .stat-number { color: var(--primary-color); }
+
+.time-range-selector {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-light);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.time-range-selector button {
+  padding: 0.6rem 1.4rem;
+  background-color: var(--bg-white);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.time-range-selector button:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  box-shadow: var(--shadow-xs);
+}
+
+.time-range-selector button.active {
+  background: var(--primary-gradient);
+  color: var(--text-white);
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.chart-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 2rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border-light);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 .chart-container {
   margin-top: 2rem;

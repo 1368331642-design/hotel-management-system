@@ -330,6 +330,8 @@ export default {
         }
         this.abortController = new AbortController()
 
+        await axios.post('/api/user/admin/rooms/sync-status', {}, { withCredentials: true }).catch(() => {})
+
         const [roomsRes, ordersRes] = await Promise.all([
           axios.get('/api/user/rooms', {
             params: { page: 0, size: 200 },

@@ -17,6 +17,7 @@ import com.hotel.repository.RoomTypeRepository;
 import com.hotel.repository.RoomRepository;
 import com.hotel.repository.OrderRepository;
 import com.hotel.repository.HotelInfoRepository;
+import com.hotel.service.RoomStatusService;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -41,6 +42,9 @@ public class RoomController {
     @Autowired
     private HotelInfoRepository hotelInfoRepository;
 
+    @Autowired
+    private RoomStatusService roomStatusService;
+
     // 获取所有房型
     @GetMapping("/room-types")
     public List<RoomType> getRoomTypes() {
@@ -60,6 +64,12 @@ public class RoomController {
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
         return roomRepository.findAll(pageable);
+    }
+
+    // 管理员：同步所有房间状态
+    @PostMapping("/admin/rooms/sync-status")
+    public Map<String, Object> syncRoomStatuses() {
+        return roomStatusService.syncAllRoomStatuses();
     }
 
     // 管理员添加房型
