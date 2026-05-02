@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.PostConstruct;
 import java.util.Date;
@@ -27,12 +29,23 @@ public class OrderStatusTask {
     @Autowired
     private RoomRepository roomRepository;
 
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+
     @PostConstruct
     public void init() {
         logger.info("=== OrderStatusTask 初始化，执行首次订单状态检查 ===");
-        checkAndUpdateOrderStatus();
+        try {
+            transactionTemplate.execute(status -> {
+                checkAndUpdateOrderStatus();
+                return null;
+            });
+        } catch (Exception e) {
+            logger.error("首次订单状态检查失败，将在定时任务中重试: {}", e.getMessage());
+        }
     }
 
+    @Transactional
     @Scheduled(cron = "0 0/1 * * * ?")
     public void checkAndUpdateOrderStatus() {
         logger.info("开始检查订单状态...");
