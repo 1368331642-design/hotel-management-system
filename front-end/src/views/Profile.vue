@@ -712,11 +712,18 @@ export default {
     async saveProfile() {
       try {
         const response = await axios.put(`/api/user/profile/${this.userInfo.id}`, this.editForm, { withCredentials: true })
-        if (response.data) {
+        if (response.data && response.data.success) {
           alert('个人信息更新成功')
-          this.userInfo = { ...this.userInfo, ...this.editForm }
+          const updatedUser = response.data.user
+          if (updatedUser) {
+            this.userInfo = { ...this.userInfo, ...updatedUser }
+          } else {
+            this.userInfo = { ...this.userInfo, ...this.editForm }
+          }
           sessionStorage.setItem('user', JSON.stringify(this.userInfo))
           this.isEditing = false
+        } else {
+          alert(response.data.message || '更新失败，请稍后重试')
         }
       } catch (error) {
         console.error('更新个人信息失败:', error)
