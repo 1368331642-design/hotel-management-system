@@ -130,8 +130,17 @@ public class OrderController {
             }
         }
         
-        // 管理员已经将房间设置为可用，直接允许预订，不检查重叠订单
-        // 管理员说了算！
+        // 时间段冲突检测：防止同一房间在同一时间段被重复预订
+        if (order.getCheckInTime() != null && order.getCheckOutTime() != null) {
+            List<Order> overlappingOrders = orderRepository.findOverlappingOrders(
+                room, order.getCheckInTime(), order.getCheckOutTime()
+            );
+            if (!overlappingOrders.isEmpty()) {
+                logger.warn("[订单创建] 时间段冲突！房间号: {}, 入住: {}, 退房: {}, 冲突订单数: {}",
+                    room.getRoomNumber(), order.getCheckInTime(), order.getCheckOutTime(), overlappingOrders.size());
+                throw new RuntimeException("该房间在所选时间段已被预订，请选择其他房间或调整日期");
+            }
+        }
         
         String orderNumber = generateOrderNumber();
         order.setOrderNumber(orderNumber);
