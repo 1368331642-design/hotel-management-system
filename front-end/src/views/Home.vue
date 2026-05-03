@@ -26,7 +26,7 @@
         </div>
         <div class="feature" @click="goToRoomStatus" style="cursor: pointer;">
           <div class="feature-icon"><SvgIcon name="bed" /></div>
-          <h3>房间查询</h3>
+          <h3>我的房间</h3>
           <p>实时查看房间状态，确保您能预订到可用的房间</p>
         </div>
         <div class="feature" @click="goToFrontService" style="cursor: pointer;">
@@ -195,7 +195,7 @@
           </div>
           <div class="feature" @click="goToRoomStatus" style="cursor: pointer;">
             <div class="feature-icon"><SvgIcon name="bed" /></div>
-            <h3>房间查询</h3>
+            <h3>我的房间</h3>
             <p>实时查看房间状态，确保您能预订到可用的房间</p>
           </div>
           <div class="feature" @click="goToFrontService" style="cursor: pointer;">

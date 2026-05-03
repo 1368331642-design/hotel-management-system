@@ -602,7 +602,9 @@
                       <td>{{ room.roomType?.capacity || '-' }}人</td>
                       <td class="cell-price">¥{{ room.roomType?.price || '-' }}</td>
                       <td>
-                        <span class="status-badge" :class="getRoomStatusClass(room.status)">{{ room.status }}</span>
+                        <span v-if="room.status === '已完成' && room._cleaningStatus !== 'done'" class="status-badge status-cleaning" @click="markCleaningDone(room.id)" style="cursor:pointer">待清洁</span>
+                        <span v-else-if="room.status === '已完成' && room._cleaningStatus === 'done'" class="status-badge status-cleaned">完成清洁</span>
+                        <span v-else class="status-badge" :class="getRoomStatusClass(room.status)">{{ room.status }}</span>
                       </td>
                       <td class="cell-user">
                         <template v-if="room._guestName">

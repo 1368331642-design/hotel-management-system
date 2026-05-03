@@ -136,7 +136,7 @@ public class OrderStatusTask {
                 orderRepository.save(order);
                 Room room = order.getRoom();
                 if (room != null) {
-                    room.setStatus("空房");
+                    room.setStatus("已完成");
                     roomRepository.save(room);
                 }
                 checkOutCount++;

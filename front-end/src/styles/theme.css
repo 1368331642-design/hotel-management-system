@@ -429,6 +429,9 @@ select.form-input {
 .status-badge.status-paid { color: var(--status-info); border: 1px solid #d6e4ff; }
 .status-badge.status-completed { color: var(--status-success); border: 1px solid #d9f7be; }
 .status-badge.status-default { color: var(--text-secondary); border: 1px solid var(--border-light); }
+.status-badge.status-cleaning { color: #e6a23c; border: 1px solid #f5dab1; background: #fdf6ec; cursor: pointer; animation: badgePulseWarning 2.5s ease-in-out infinite; }
+.status-badge.status-cleaning:hover { background: #faead7; }
+.status-badge.status-cleaned { color: #67c23a; border: 1px solid #c2e7b0; background: #f0f9eb; }
 
 @keyframes badgePulse {
   0%, 100% { box-shadow: 0 0 0 0 transparent; }

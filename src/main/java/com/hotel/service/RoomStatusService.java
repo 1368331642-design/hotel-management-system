@@ -54,9 +54,10 @@ public class RoomStatusService {
             case "已入住":
                 return "已入住";
             case "已完成":
-            case "已取消":
             case "已退房":
             case "自动退房":
+                return "已完成";
+            case "已取消":
                 return "空房";
             default:
                 return "空房";

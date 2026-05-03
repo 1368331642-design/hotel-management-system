@@ -15,7 +15,8 @@
       <div v-for="room in rooms" :key="room.id" class="room-card card" :class="'status-' + room.status">
         <div class="room-number">{{ room.roomNumber }}</div>
         <div class="room-type">{{ room.roomType?.name }}</div>
-        <span class="status-badge" :class="getRoomStatusClass(room.status)">{{ room.status }}</span>
+        <span v-if="room.status === '已完成'" class="status-badge status-cleaning">待清洁</span>
+        <span v-else class="status-badge" :class="getRoomStatusClass(room.status)">{{ room.status }}</span>
         <div class="room-capacity">{{ room.roomType?.capacity }}人</div>
         <div class="room-price">¥{{ room.roomType?.price }}/晚</div>
       </div>

@@ -29,7 +29,7 @@
         <h1><SvgIcon name="hotel" size="1.2em" /> 翻斗花园酒店</h1>
         <nav>
           <router-link to="/" v-if="!isAdmin">首页</router-link>
-          <router-link to="/rooms" v-if="!isAdmin && !isFront">房间查询</router-link>
+          <router-link to="/rooms" v-if="!isAdmin && !isFront">我的房间</router-link>
           <router-link to="/booking" v-if="!isAdmin && !isFront">在线预订</router-link>
           <router-link to="/profile" v-if="isLoggedIn && !isAdmin && !isFront">个人中心</router-link>
           <router-link to="/front-desk" v-if="isFront && !isAdmin">前台服务</router-link>

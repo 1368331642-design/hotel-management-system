@@ -140,7 +140,9 @@ public class AdminController {
                 room.setStatus("已预订");
             } else if ("已入住".equals(status)) {
                 room.setStatus("已入住");
-            } else if ("已完成".equals(status) || "已取消".equals(status) || "已退房".equals(status) || "自动退房".equals(status)) {
+            } else if ("已完成".equals(status) || "已退房".equals(status) || "自动退房".equals(status)) {
+                room.setStatus("已完成");
+            } else if ("已取消".equals(status)) {
                 room.setStatus("空房");
             }
             roomRepository.save(room);
@@ -157,7 +159,6 @@ public class AdminController {
         int updatedCount = 0;
         
         for (Room room : rooms) {
-            // 查找该房间是否有活跃订单
             String roomStatus = "空房";
             
             for (Order order : orders) {
@@ -167,6 +168,10 @@ public class AdminController {
                         break;
                     }
                 }
+            }
+            
+            if ("空房".equals(roomStatus) && "已完成".equals(room.getStatus())) {
+                continue;
             }
             
             if (!roomStatus.equals(room.getStatus())) {

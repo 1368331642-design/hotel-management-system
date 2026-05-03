@@ -163,14 +163,18 @@ public class OrderController {
     @PutMapping("/orders/{id}/cancel")
     public Order cancelOrder(@PathVariable Long id) {
         Order order = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("Order not found"));
+        String previousStatus = order.getStatus();
         order.setStatus("已取消");
         Order savedOrder = orderRepository.save(order);
         
-        // 更新房间状态为可用
         if (savedOrder.getRoom() != null) {
             Room room = roomRepository.findById(savedOrder.getRoom().getId()).orElse(null);
             if (room != null) {
-                room.setStatus("空房");
+                if ("已入住".equals(previousStatus)) {
+                    room.setStatus("已完成");
+                } else {
+                    room.setStatus("空房");
+                }
                 roomRepository.save(room);
             }
         }
