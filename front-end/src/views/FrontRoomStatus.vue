@@ -446,12 +446,12 @@ export default {
     markCleaningDone(roomId) {
       const room = this.rooms.find(r => r.id === roomId)
       if (!room || room._cleaningStatus === 'done') return
-      this.$set(room, '_cleaningStatus', 'done')
+      room._cleaningStatus = 'done'
       if (this.cleaningTimers[roomId]) {
         clearTimeout(this.cleaningTimers[roomId])
       }
       this.cleaningTimers[roomId] = setTimeout(() => {
-        this.$delete(this.cleaningTimers, roomId)
+        delete this.cleaningTimers[roomId]
         this.resetRoomToVacant(roomId)
       }, 2000)
     },
